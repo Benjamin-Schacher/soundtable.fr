@@ -601,47 +601,104 @@
             <section id="articles" class="articles-section">
                 <h2 class="section-title">Articles à lire</h2>
                 <div class="scroll-container">
-                    <?php
-                    ini_set('display_errors', 1);
-                    error_reporting(E_ALL);
-                    $articleDir = '/home/soundti/www/page/article/'; 
-                    $defaultImage = '/asset/default-article.png';
-                    
-                    if (is_dir($articleDir) && is_readable($articleDir)) {
-                        $articles = glob($articleDir . '*.json');
-                        if (empty($articles)) {
-                            echo 'Aucun article trouvé.<br>';
-                        } else {
-                            foreach ($articles as $articleFile) {
-                                $content = file_get_contents($articleFile);
-                                $article = json_decode($content, true);
-                                if ($article && isset($article['titre'], $article['url'])) {
-                                    $description = isset($article['description'])
-                                        ? $article['description']
-                                        : substr(strip_tags(str_replace(['#', '**', '*'], '', $article['contenu'])), 0, 80) . '...';
-                                    $image = isset($article['image']) ? $article['image'] : $defaultImage;
-                                    echo '<div class="article-card">';
-                                    echo '<img src="' . htmlspecialchars($image) . '" alt="' . htmlspecialchars($article['titre']) . '">';
-                                    echo '<h3 class="card-title">' . htmlspecialchars($article['titre']) . '</h3>';
-                                    
-                                    
-                                    $categories = isset($article['categorie']) && is_array($article['categorie'])
-                                        ? implode(', ', array_map('htmlspecialchars', $article['categorie']))
-                                        : 'Aucune catégorie';
-                                    echo '<h4 class="card-categorie">' . $categories . '</h4>';
-
-                                    echo '<p class="card-description">' . htmlspecialchars($description) . '</p>';
-                                    echo '<a href="' . htmlspecialchars($article['url']) . '">Lire</a>';
-                                    echo '</div>';
-                                }
-                            }
-                        }
-                    } else {
-                        echo 'Erreur : Répertoire inaccessible.<br>';
-                    }
-                    echo '</pre>';
-                    ?>
+                <div class="search-container" style="text-align: center; margin-bottom: 20px;">
+                    <input type="text" id="search-name" placeholder="Rechercher par nom..." style="padding: 10px; margin: 5px; border-radius: 5px; border: none; width: 200px;">
+                    <input type="text" id="search-category" placeholder="Rechercher par catégorie..." style="padding: 10px; margin: 5px; border-radius: 5px; border: none; width: 200px;">
                 </div>
+
+                <div class="scroll-container" id="articles-container">
+                    <!-- Les articles seront injectés ici par JS -->
+                </div>
+
+                <?php
+                $articleDir = __DIR__ . '/../article/'; 
+                $defaultImage = '/asset/default-article.png';
+                $articlesData = [];
+
+                if (is_dir($articleDir)) {
+                    $files = glob($articleDir . '*.json');
+                    foreach ($files as $file) {
+                        $content = json_decode(file_get_contents($file), true);
+                        if ($content && isset($content['titre'])) {
+                            $slug = basename($file, '.json');
+                            $description = isset($content['description']) ? $content['description'] : '';
+                            if (empty($description) && isset($content['contenu'])) {
+                                $description = substr(strip_tags(str_replace(['#', '**', '*'], '', $content['contenu'])), 0, 80) . '...';
+                            }
+                            
+                            $categories = isset($content['categorie']) && is_array($content['categorie']) ? $content['categorie'] : ['Non classé'];
+
+                            $articlesData[] = [
+                                'title' => $content['titre'],
+                                'url' => '/article/' . $slug,
+                                'image' => $content['image'] ?? $defaultImage,
+                                'description' => $description,
+                                'date' => $content['date'] ?? '0000-00-00',
+                                'categories' => $categories
+                            ];
+                        }
+                    }
+                }
+                
+                // Trier par date décroissante (plus récent en premier)
+                usort($articlesData, function($a, $b) {
+                    return strtotime($b['date']) - strtotime($a['date']);
+                });
+                ?>
+
+                <script>
+                    const articles = <?php echo json_encode($articlesData); ?>;
+                    const container = document.getElementById('articles-container');
+                    const searchNameInput = document.getElementById('search-name');
+                    const searchCategoryInput = document.getElementById('search-category');
+
+                    function renderArticles(filteredArticles) {
+                        container.innerHTML = '';
+                        // Limiter à 10 articles si aucune recherche n'est active
+                        const isSearching = searchNameInput.value.trim() !== '' || searchCategoryInput.value.trim() !== '';
+                        const displayList = isSearching ? filteredArticles : filteredArticles.slice(0, 10);
+
+                        if (displayList.length === 0) {
+                            container.innerHTML = '<p style="text-align:center; width:100%;">Aucun article trouvé.</p>';
+                            return;
+                        }
+
+                        displayList.forEach(article => {
+                            const card = document.createElement('div');
+                            card.className = 'article-card';
+                            
+                            const categoriesStr = article.categories.join(', ');
+
+                            card.innerHTML = `
+                                <img src="${article.image}" alt="${article.title}">
+                                <h3 class="card-title">${article.title}</h3>
+                                <h4 class="card-categorie">${categoriesStr}</h4>
+                                <p class="card-description">${article.description}</p>
+                                <a href="${article.url}">Lire</a>
+                            `;
+                            container.appendChild(card);
+                        });
+                    }
+
+                    function filterArticles() {
+                        const nameTerm = searchNameInput.value.toLowerCase();
+                        const categoryTerm = searchCategoryInput.value.toLowerCase();
+
+                        const filtered = articles.filter(article => {
+                            const matchName = article.title.toLowerCase().includes(nameTerm);
+                            const matchCategory = article.categories.some(cat => cat.toLowerCase().includes(categoryTerm));
+                            return matchName && matchCategory;
+                        });
+
+                        renderArticles(filtered);
+                    }
+
+                    searchNameInput.addEventListener('input', filterArticles);
+                    searchCategoryInput.addEventListener('input', filterArticles);
+
+                    // Initial render
+                    renderArticles(articles);
+                </script>
             </section>
         </div>
     </div>

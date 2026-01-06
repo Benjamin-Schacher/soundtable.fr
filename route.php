@@ -19,6 +19,13 @@ function route($uri) {
         '/article/([a-zA-Z0-9-]+)' => 'page/article/$1.json',
         '/api/armies' => 'api/armies.php',
         '/api/ideabox' => 'api/ideabox.php',
+
+        '/admin/login' => 'page/admin/login.php',
+        '/admin/dashboard' => 'page/admin/dashboard.php',
+        '/admin/create' => 'page/admin/create_article.php',
+        '/api/admin/login' => 'api/admin/login.php',
+        '/api/admin/save-article' => 'api/admin/save_article.php',
+        '/api/admin/logout' => 'api/admin/logout.php',
     ];
 
     // Vérifier les routes statiques
