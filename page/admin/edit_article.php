@@ -4,13 +4,32 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     header('Location: /admin/login');
     exit;
 }
+
+// Récupérer le slug depuis l'URL (via route.php)
+$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if (preg_match('#^/admin/edit/([a-zA-Z0-9-]+)$#', $uri, $matches)) {
+    $slug = $matches[1];
+} else {
+    die("Article non spécifié.");
+}
+
+$filePath = __DIR__ . '/../../page/article/' . $slug . '.json';
+
+if (!file_exists($filePath)) {
+    die("Article introuvable.");
+}
+
+$article = json_decode(file_get_contents($filePath), true);
+if (!$article) {
+    die("Erreur de lecture de l'article.");
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Créer un Article - SoundTable</title>
+    <title>Modifier Article - SoundTable</title>
     <script src="https://cdn.tiny.cloud/1/51pfyg5lw4p4z1r6cz0g0i0d9swi2979bil18hwosqamze9f/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
         body {
@@ -62,7 +81,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     </style>
     <script>
         tinymce.init({
-            selector: 'textarea[name="contenu"]',
+            selector: '#contenu',
             plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
             toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
             skin: 'oxide-dark',
@@ -73,31 +92,34 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 </head>
 <body>
     <div class="container">
-        <h1>Créer un nouvel article</h1>
+        <h1>Modifier l'article : <?php echo htmlspecialchars($article['titre']); ?></h1>
         <form id="article-form">
+            <input type="hidden" name="original_slug" value="<?php echo htmlspecialchars($slug); ?>">
+            <input type="hidden" name="is_edit" value="1">
+            
             <div class="form-group">
                 <label>Titre</label>
-                <input type="text" name="titre" required>
+                <input type="text" name="titre" value="<?php echo htmlspecialchars($article['titre']); ?>" required>
             </div>
             <div class="form-group">
                 <label>Date</label>
-                <input type="date" name="date" value="<?php echo date('Y-m-d'); ?>" required>
+                <input type="date" name="date" value="<?php echo htmlspecialchars($article['date']); ?>" required>
             </div>
             <div class="form-group">
                 <label>Catégories (séparées par des virgules)</label>
-                <input type="text" name="categorie" placeholder="Ex: JDR, Fantasy, News">
+                <input type="text" name="categorie" value="<?php echo htmlspecialchars(implode(', ', $article['categorie'] ?? [])); ?>">
             </div>
             <div class="form-group">
                 <label>Description (Meta)</label>
-                <input type="text" name="description" required>
+                <input type="text" name="description" value="<?php echo htmlspecialchars($article['description'] ?? ''); ?>" required>
             </div>
             <div class="form-group">
                 <label>Contenu</label>
-                <textarea name="contenu"></textarea>
+                <textarea id="contenu" name="contenu"><?php echo htmlspecialchars($article['contenu']); ?></textarea>
             </div>
             <div class="actions">
                 <a href="/admin/dashboard" class="btn btn-secondary">Annuler</a>
-                <button type="submit" class="btn">Publier</button>
+                <button type="submit" class="btn">Enregistrer les modifications</button>
             </div>
         </form>
     </div>
@@ -122,7 +144,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('Article publié avec succès !');
+                    alert('Article modifié avec succès !');
                     window.location.href = '/admin/dashboard';
                 } else {
                     alert('Erreur : ' + (result.error || 'Inconnue'));

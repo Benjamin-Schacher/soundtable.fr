@@ -66,7 +66,7 @@
         #container {
             width: calc(100% - 70px);
             margin-left: 70px;
-            padding: 20px;
+            padding: 20px 0 20px 20px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -149,48 +149,61 @@
             margin-bottom: 20px;
         }
 
+
+        .scroll-container #articles-container {
+            padding: 20px 0 20px 20px;
+            overflow-y: auto;
+        }
+        #tools-container {
+            padding: 20px 0 20px 20px;
+            overflow-y: auto;
+            display: flex;
+            align-content: center;
+            justify-content: center;
+            -webkit-overflow-scrolling: touch;
+            gap: 30px;
+            scroll-snap-type: x mandatory;
+            box-sizing: border-box;
+        }
+
         .scroll-container {
             display: flex;
             gap: 20px;
             flex-wrap: nowrap;
-            overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             width: 100%;
             margin: 0 auto;
-            padding: 20px 0;
+            padding: 20px 0 20px 20px;
             scroll-snap-type: x mandatory;
             box-sizing: border-box;
-            /* Remove padding-left to avoid initial offset */
             padding-left: 0;
-            /* Add padding-right to ensure space at the end of the scroll */
-            padding-right: 40px;
-            justify-content: center;
+            justify-content: flex-start
         }
 
         /* Centrage si pas de scroll (largeur totale des cartes < largeur du conteneur) */
-        .scroll-container:not(:has(*:nth-child(5))) {
+        .scroll-container:not(:has(*:nth-child(5))), #tools-container:not(:has(*:nth-child(5))) {
             justify-content: center;
             padding-right: 0; /* Remove padding-right if centered */
         }
 
 
-        .scroll-container::-webkit-scrollbar {
+        .scroll-container::-webkit-scrollbar, #tools-container::-webkit-scrollbar  {
             height: 8px;
         }
 
-        .scroll-container::-webkit-scrollbar-thumb {
+        .scroll-container::-webkit-scrollbar-thumb, #tools-container::-webkit-scrollbar-thumb {
             background-color: #555;
             border-radius: 10px;
         }
 
-        .scroll-container::-webkit-scrollbar-track {
+        .scroll-container::-webkit-scrollbar-track, #tools-container::-webkit-scrollbar-track {
             background-color: #f1f1f1;
         }
 
         /* Responsive adjustments */
         @media (max-width: 900px) {
             .scroll-container {
-                padding: 20px 0;
+                padding: 20px 0 20px 20px;
                 padding-right: 15px; /* Space at the end on mobile */
             }
 
@@ -390,8 +403,8 @@
             }
 
             .scroll-container {
-                padding: 20px 0;
-                padding-left: 15px; /* Marge initiale sur mobile */
+                padding: 20px 0 20px 20px;
+                padding-left: 15px; 
             }
 
             .scroll-container:not(:has(*:nth-child(5))) {
@@ -446,6 +459,63 @@
             .langBtn a, .langBtn span {
                 font-size: 1em;
             }
+        }
+        /* Category Filter Styles */
+        .filter-container {
+            text-align: center;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+            justify-content: center;
+        }
+
+        .category-checkbox {
+            display: none; /* Hide actual checkbox */
+        }
+
+        .category-label {
+            background-color: #755139;
+            color: #f5f5dc;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            border: 2px solid #755139;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .category-label:hover {
+            background-color: #a0724e;
+            border-color: #a0724e;
+        }
+
+        .category-checkbox:checked + .category-label {
+            background-color: #f5e0b7;
+            color: #755139;
+            border-color: #755139;
+            font-weight: bold;
+        }
+
+        #search-name {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #755139;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #f5f5dc;
+        }
+        
+        #search-name::placeholder {
+            color: #d4c7b4;
         }
     </style>
     <script>
@@ -575,7 +645,7 @@
             <!-- Section Outils -->
             <section id="tools" class="tools-section">
                 <h2 class="section-title">Outils pour vos parties</h2>
-                <div class="scroll-container">
+                <div id="tools-container">
                     <div class="tool-card">
                         <img src="/asset/soundtable.png" alt="Soundboard Chroniques Oubliées">
                         <h3 class="card-title">Chroniques Oubliées</h3>
@@ -601,25 +671,27 @@
             <section id="articles" class="articles-section">
                 <h2 class="section-title">Articles à lire</h2>
                 <div class="scroll-container">
-                <div class="search-container" style="text-align: center; margin-bottom: 20px;">
-                    <input type="text" id="search-name" placeholder="Rechercher par nom..." style="padding: 10px; margin: 5px; border-radius: 5px; border: none; width: 200px;">
-                    <input type="text" id="search-category" placeholder="Rechercher par catégorie..." style="padding: 10px; margin: 5px; border-radius: 5px; border: none; width: 200px;">
-                </div>
-
-                <div class="scroll-container" id="articles-container">
-                    <!-- Les articles seront injectés ici par JS -->
-                </div>
-
                 <?php
                 $articleDir = __DIR__ . '/../article/'; 
                 $defaultImage = '/asset/default-article.png';
                 $articlesData = [];
+                $allCategories = [];
 
                 if (is_dir($articleDir)) {
                     $files = glob($articleDir . '*.json');
+                    echo "<!-- DEBUG: Article Directory: " . htmlspecialchars($articleDir) . " -->";
+                    echo "<!-- DEBUG: Files found: " . count($files) . " -->";
+                    
                     foreach ($files as $file) {
-                        $content = json_decode(file_get_contents($file), true);
-                        if ($content && isset($content['titre'])) {
+                        $rawContent = file_get_contents($file);
+                        $content = json_decode($rawContent, true);
+                        
+                        if ($content === null) {
+                            echo "<!-- DEBUG: JSON Decode Error for " . basename($file) . ": " . json_last_error_msg() . " -->";
+                            continue;
+                        }
+
+                        if (isset($content['titre'])) {
                             $slug = basename($file, '.json');
                             $description = isset($content['description']) ? $content['description'] : '';
                             if (empty($description) && isset($content['contenu'])) {
@@ -627,36 +699,74 @@
                             }
                             
                             $categories = isset($content['categorie']) && is_array($content['categorie']) ? $content['categorie'] : ['Non classé'];
+                            
+                            // Collect categories
+                            foreach ($categories as $cat) {
+                                $cat = trim($cat);
+                                if (!in_array($cat, $allCategories)) {
+                                    $allCategories[] = $cat;
+                                }
+                            }
 
+                            // Force UTF-8 encoding for all strings to ensure json_encode works
                             $articlesData[] = [
-                                'title' => $content['titre'],
+                                'title' => mb_convert_encoding($content['titre'], 'UTF-8', 'auto'),
                                 'url' => '/article/' . $slug,
                                 'image' => $content['image'] ?? $defaultImage,
-                                'description' => $description,
+                                'description' => mb_convert_encoding($description, 'UTF-8', 'auto'),
                                 'date' => $content['date'] ?? '0000-00-00',
-                                'categories' => $categories
+                                'categories' => array_map(function($c) { return mb_convert_encoding($c, 'UTF-8', 'auto'); }, $categories)
                             ];
+                        } else {
+                             echo "<!-- DEBUG: Missing 'titre' in " . basename($file) . " -->";
                         }
                     }
+                } else {
+                    echo "<!-- DEBUG: Directory not found: " . htmlspecialchars($articleDir) . " -->";
                 }
                 
                 // Trier par date décroissante (plus récent en premier)
                 usort($articlesData, function($a, $b) {
                     return strtotime($b['date']) - strtotime($a['date']);
                 });
+                sort($allCategories); // Sort categories alphabetically
                 ?>
 
+                <div class="filter-container">
+                    <input type="text" id="search-name" placeholder="Rechercher par nom...">
+                    <div class="category-filters" id="category-filters">
+                        <?php foreach ($allCategories as $category): ?>
+                            <label>
+                                <input type="checkbox" class="category-checkbox" value="<?php echo htmlspecialchars($category); ?>">
+                                <span class="category-label"><?php echo htmlspecialchars($category); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div class="scroll-container" id="articles-container">
+                    <!-- Les articles seront injectés ici par JS -->
+                </div>
+
                 <script>
-                    const articles = <?php echo json_encode($articlesData); ?>;
+                    const articles = <?php 
+                        $json = json_encode($articlesData);
+                        if ($json === false) {
+                            echo '[]';
+                            echo '; console.error("JSON Encode Error: ' . json_last_error_msg() . '");';
+                        } else {
+                            echo $json;
+                        }
+                    ?>;
                     const container = document.getElementById('articles-container');
                     const searchNameInput = document.getElementById('search-name');
-                    const searchCategoryInput = document.getElementById('search-category');
+                    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
 
                     function renderArticles(filteredArticles) {
                         container.innerHTML = '';
                         // Limiter à 10 articles si aucune recherche n'est active
-                        const isSearching = searchNameInput.value.trim() !== '' || searchCategoryInput.value.trim() !== '';
-                        const displayList = isSearching ? filteredArticles : filteredArticles.slice(0, 10);
+                        const isFiltering = searchNameInput.value.trim() !== '' || Array.from(categoryCheckboxes).some(cb => cb.checked);
+                        const displayList = isFiltering ? filteredArticles : filteredArticles.slice(0, 10);
 
                         if (displayList.length === 0) {
                             container.innerHTML = '<p style="text-align:center; width:100%;">Aucun article trouvé.</p>';
@@ -682,11 +792,23 @@
 
                     function filterArticles() {
                         const nameTerm = searchNameInput.value.toLowerCase();
-                        const categoryTerm = searchCategoryInput.value.toLowerCase();
+                        
+                        // Get selected categories
+                        const selectedCategories = Array.from(categoryCheckboxes)
+                            .filter(cb => cb.checked)
+                            .map(cb => cb.value.toLowerCase());
 
                         const filtered = articles.filter(article => {
                             const matchName = article.title.toLowerCase().includes(nameTerm);
-                            const matchCategory = article.categories.some(cat => cat.toLowerCase().includes(categoryTerm));
+                            
+                            // Category match: 
+                            // If no category selected, return true (ignore category filter)
+                            // If categories selected, article must have AT LEAST ONE of the selected categories
+                            let matchCategory = true;
+                            if (selectedCategories.length > 0) {
+                                matchCategory = article.categories.some(cat => selectedCategories.includes(cat.toLowerCase()));
+                            }
+
                             return matchName && matchCategory;
                         });
 
@@ -694,7 +816,7 @@
                     }
 
                     searchNameInput.addEventListener('input', filterArticles);
-                    searchCategoryInput.addEventListener('input', filterArticles);
+                    categoryCheckboxes.forEach(cb => cb.addEventListener('change', filterArticles));
 
                     // Initial render
                     renderArticles(articles);

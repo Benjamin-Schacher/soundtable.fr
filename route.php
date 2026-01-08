@@ -23,6 +23,7 @@ function route($uri) {
         '/admin/login' => 'page/admin/login.php',
         '/admin/dashboard' => 'page/admin/dashboard.php',
         '/admin/create' => 'page/admin/create_article.php',
+        '/admin/edit/([a-zA-Z0-9-]+)' => 'page/admin/edit_article.php',
         '/api/admin/login' => 'api/admin/login.php',
         '/api/admin/save-article' => 'api/admin/save_article.php',
         '/api/admin/logout' => 'api/admin/logout.php',
@@ -47,6 +48,11 @@ function route($uri) {
                     require 'handle_article.php';
                     return;
                 }
+            }
+            // Handle other dynamic routes (like edit)
+            if (file_exists($file)) {
+                include $file;
+                return;
             }
         }
     }

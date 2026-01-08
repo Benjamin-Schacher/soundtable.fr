@@ -44,10 +44,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $filePath = __DIR__ . '/../../page/article/' . $slug . '.json';
     
-    if (file_exists($filePath)) {
+    // Si ce n'est pas une édition, vérifier si le fichier existe déjà
+    if (!isset($input['is_edit']) && file_exists($filePath)) {
         http_response_code(409);
         echo json_encode(['error' => 'Un article avec ce titre existe déjà']);
         exit;
+    }
+
+    // Si c'est une édition et que le slug a changé, on pourrait vouloir supprimer l'ancien fichier
+    // Pour l'instant, on gère juste l'écrasement ou la création du nouveau fichier
+    if (isset($input['is_edit']) && isset($input['original_slug']) && $input['original_slug'] !== $slug) {
+        $oldFilePath = __DIR__ . '/../../page/article/' . $input['original_slug'] . '.json';
+        if (file_exists($oldFilePath)) {
+            unlink($oldFilePath); // Supprimer l'ancien fichier si le titre a changé
+        }
     }
 
     if (file_put_contents($filePath, json_encode($articleData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))) {
