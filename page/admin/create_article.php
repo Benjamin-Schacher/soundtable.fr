@@ -84,6 +84,13 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
                 <input type="date" name="date" value="<?php echo date('Y-m-d'); ?>" required>
             </div>
             <div class="form-group">
+                <label>Statut</label>
+                <select name="status" style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 4px; background-color: #333; color: #fff; font-size: 1rem;">
+                    <option value="published">Publié</option>
+                    <option value="draft">Brouillon</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Catégories (séparées par des virgules)</label>
                 <input type="text" name="categorie" placeholder="Ex: JDR, Fantasy, News">
             </div>

@@ -106,6 +106,13 @@ if (!$article) {
                 <input type="date" name="date" value="<?php echo htmlspecialchars($article['date']); ?>" required>
             </div>
             <div class="form-group">
+                <label>Statut</label>
+                <select name="status" style="width: 100%; padding: 0.75rem; border: 1px solid #444; border-radius: 4px; background-color: #333; color: #fff; font-size: 1rem;">
+                    <option value="published" <?php echo (isset($article['status']) && $article['status'] === 'published') ? 'selected' : ''; ?>>Publié</option>
+                    <option value="draft" <?php echo (isset($article['status']) && $article['status'] === 'draft') ? 'selected' : ''; ?>>Brouillon</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Catégories (séparées par des virgules)</label>
                 <input type="text" name="categorie" value="<?php echo htmlspecialchars(implode(', ', $article['categorie'] ?? [])); ?>">
             </div>

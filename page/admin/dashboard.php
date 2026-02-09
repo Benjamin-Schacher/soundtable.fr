@@ -17,7 +17,8 @@ if (is_dir($articleDir)) {
                 'filename' => basename($file),
                 'title' => $content['titre'] ?? 'Sans titre',
                 'date' => $content['date'] ?? 'Date inconnue',
-                'categories' => $content['categorie'] ?? []
+                'categories' => $content['categorie'] ?? [],
+                'status' => $content['status'] ?? 'published'
             ];
         }
     }
@@ -89,15 +90,18 @@ if (is_dir($articleDir)) {
     // Récupérer les vues
     $viewsByPage = [];
     $totalViews = 0;
-    try {
-        $stmt = $pdo->query("SELECT page_name, SUM(unique_views) as total_views FROM page_views GROUP BY page_name");
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $viewsByPage[$row['page_name']] = $row['total_views'];
-            $totalViews += $row['total_views'];
+    
+    if ($pdo) {
+        try {
+            $stmt = $pdo->query("SELECT page_name, SUM(unique_views) as total_views FROM page_views GROUP BY page_name");
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $viewsByPage[$row['page_name']] = $row['total_views'];
+                $totalViews += $row['total_views'];
+            }
+        } catch (PDOException $e) {
+            // En cas d'erreur (ex: table inexistante), on continue sans les vues
+            error_log("Erreur récupération vues: " . $e->getMessage());
         }
-    } catch (PDOException $e) {
-        // En cas d'erreur (ex: table inexistante), on continue sans les vues
-        error_log("Erreur récupération vues: " . $e->getMessage());
     }
 
     // Calcul des statistiques
@@ -192,7 +196,12 @@ if (is_dir($articleDir)) {
             <?php foreach ($articles as $article): ?>
                 <div class="article-item">
                     <div>
-                        <div class="article-title"><?php echo htmlspecialchars($article['title']); ?></div>
+                        <div class="article-title">
+                            <?php echo htmlspecialchars($article['title']); ?>
+                            <?php if ($article['status'] === 'draft'): ?>
+                                <span style="background-color: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">BROUILLON</span>
+                            <?php endif; ?>
+                        </div>
                         <div class="article-date">
                             <?php echo htmlspecialchars($article['date']); ?> • 
                             <span style="color: #28a745;"><?php echo $article['views']; ?> vues</span>

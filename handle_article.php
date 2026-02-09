@@ -170,6 +170,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'], $_POST['messa
 $content = file_get_contents($jsonFileAbsolute);
 $article = json_decode($content, true);
 
+// Vérification du statut Brouillon
+if (isset($article['status']) && $article['status'] === 'draft') {
+    session_start();
+    if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+        // Rediriger vers 404 ou afficher une erreur 403
+        http_response_code(404);
+        include 'page/404.php'; // Assurez-vous que ce chemin est correct par rapport à handle_article.php ou route.php
+        exit;
+    }
+}
+
 // Vérifier si le JSON est valide
 if (json_last_error() === JSON_ERROR_NONE) {
     // Vérifier si les clés existent
@@ -184,7 +195,7 @@ if (json_last_error() === JSON_ERROR_NONE) {
             $commentSection .= '<p style="color: #6b5b5b; text-align: center;">Aucun commentaire pour le moment. Soyez le premier !</p>';
         } else {
             // Fonction pour afficher les commentaires récursivement
-            function renderComments($comments, $depth = 0, $userIp) {
+            function renderComments($comments, $userIp, $depth = 0) {
                 $output = '';
                 foreach ($comments as $comment) {
                     $indent = $depth * 20; // Indentation de 20px par niveau
@@ -228,7 +239,7 @@ if (json_last_error() === JSON_ERROR_NONE) {
                     // Afficher les réponses récursivement (masquées par défaut)
                     if ($hasReplies) {
                         $output .= '<div class="replies" style="display: none;">';
-                        $output .= renderComments($comment['replies'], $depth + 1, $userIp);
+                        $output .= renderComments($comment['replies'], $userIp, $depth + 1);
                         $output .= '</div>';
                     }
                     $output .= '</div>';
@@ -236,7 +247,7 @@ if (json_last_error() === JSON_ERROR_NONE) {
                 return $output;
             }
             
-            $commentSection .= renderComments($comments, 0, $_SERVER['REMOTE_ADDR']);
+            $commentSection .= renderComments($comments, $_SERVER['REMOTE_ADDR']);
         }
 
         // Ajouter le formulaire pour un nouveau commentaire

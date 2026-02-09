@@ -692,6 +692,11 @@
                         }
 
                         if (isset($content['titre'])) {
+                            // SKIP DRAFTS
+                            if (isset($content['status']) && $content['status'] === 'draft') {
+                                continue;
+                            }
+
                             $slug = basename($file, '.json');
                             $description = isset($content['description']) ? $content['description'] : '';
                             if (empty($description) && isset($content['contenu'])) {

@@ -33,13 +33,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Générer le slug
     $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $titre)));
     
+    // Statut
+    $status = isset($input['status']) && in_array($input['status'], ['published', 'draft']) ? $input['status'] : 'published';
+
     // Construire le JSON
     $articleData = [
         'titre' => $titre,
         'date' => $date,
         'categorie' => $categories,
         'description' => $description,
-        'contenu' => $contenu
+        'contenu' => $contenu,
+        'status' => $status
     ];
 
     $filePath = __DIR__ . '/../../page/article/' . $slug . '.json';
