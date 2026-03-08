@@ -658,11 +658,19 @@
                         <p class="card-description">Vivez des aventures galactiques avec des effets sonores immersifs pour l’univers Star Wars.</p>
                         <a href="/starwars">Explorer</a>
                     </div>
+                    <!--
                     <div class="tool-card">
                         <img src="/asset/image-warhammer.png" alt="Outils Warhammer">
                         <h3 class="card-title">Outils Warhammer</h3>
                         <p class="card-description">Préparez vos batailles avec nos outils pour Warhammer et jeux de figurines.</p>
                         <a href="/warhammeurArmise">Explorer</a>
+                    </div>
+                    -->
+                    <div class="tool-card">
+                        <img src="/asset/yugimuto.png" style="object-position: top;" alt="Deck Yugi Muto">
+                        <h3 class="card-title">Téléchargez le deck commander Yûgi Muto.</h3>
+                        <p class="card-description">Deck pour jouer a magic the gathering format commander.</p>                   
+                        <a href="/public/deck-yugioh.zip" download onclick="trackPageView('telechargement-deck-yugioh')">Télécharger</a>
                     </div>
                 </div>
             </section>

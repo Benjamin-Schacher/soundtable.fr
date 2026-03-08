@@ -65,6 +65,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
             selector: 'textarea[name="contenu"]',
             plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
             toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+            images_upload_url: '/api/admin/upload_image.php',
+            automatic_uploads: true,
             skin: 'oxide-dark',
             content_css: 'dark',
             height: 500
