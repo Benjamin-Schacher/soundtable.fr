@@ -17,6 +17,7 @@ function route($uri) {
         '/MTG-compteur-de-point-de-vie' => 'page/mtg-life-counter/lifeCounter.php',
         '/admin/generate-sitemap' => 'generate_sitemap.php',
         '/article/([a-zA-Z0-9-]+)' => 'page/article/$1.json',
+        '/livre/([a-zA-Z0-9-]+)' => 'page/livre/$1.json',
         '/api/armies' => 'api/armies.php',
         '/api/ideabox' => 'api/ideabox.php',
 
@@ -24,8 +25,12 @@ function route($uri) {
         '/admin/dashboard' => 'page/admin/dashboard.php',
         '/admin/create' => 'page/admin/create_article.php',
         '/admin/edit/([a-zA-Z0-9-]+)' => 'page/admin/edit_article.php',
+        '/admin/create-livre' => 'page/admin/create_livre.php',
+        '/admin/edit-livre/([a-zA-Z0-9-]+)' => 'page/admin/edit_livre.php',
+        
         '/api/admin/login' => 'api/admin/login.php',
         '/api/admin/save-article' => 'api/admin/save_article.php',
+        '/api/admin/save-livre' => 'api/admin/save_livre.php',
         '/api/admin/logout' => 'api/admin/logout.php',
     ];
 

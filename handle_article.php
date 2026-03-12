@@ -18,6 +18,7 @@ if (!file_exists($jsonFileAbsolute)) {
 
 // Extraire l'ID de l'article à partir du chemin du fichier JSON
 $articleId = basename($jsonFile, '.json'); // Ex. "taxandria"
+$livreChapitre = isset($_GET['chapitre']) ? $_GET['chapitre'] : null;
 
 // Définir le chemin des commentaires
 $commentDir = __DIR__ . '/page/comments/';
@@ -261,16 +262,57 @@ if (json_last_error() === JSON_ERROR_NONE) {
         $commentSection .= '</div>';
         $commentSection .= '</div>';
 
+        $isLivre = strpos(str_replace('\\', '/', $jsonFileAbsolute), '/page/livre/') !== false;
+
         // Utiliser le chemin correct du template
-        $templatePath = 'page/template/articleTemplate.html';
+        $templatePath = $isLivre ? 'page/template/livreTemplate.html' : 'page/template/articleTemplate.html';
         if (file_exists($templatePath)) {
             $template = file_get_contents($templatePath);
-            $template = str_replace('{TITRE_ARTICLE}', htmlspecialchars($article['titre']), $template);
+            $template = str_replace('{TITRE_ARTICLE}', $article['titre'], $template);
             $template = str_replace('{DATE_PUBLICATION}', htmlspecialchars($article['date']), $template);
             $template = str_replace('{CONTENU_ARTICLE}', $articleContentHtml, $template);
             $template = str_replace('{META_DESCRIPTION}', htmlspecialchars($article['description'] ?? 'Découvrez cet article sur Soundtable !'), $template);
-            $template = str_replace('{TAXANDRIA_URL}', htmlspecialchars('/article/' . $articleId), $template);
+            
+            $urlPrefix = $isLivre ? '/livre/' : '/article/';
+            $template = str_replace('{TAXANDRIA_URL}', htmlspecialchars($urlPrefix . $articleId), $template);
             $template = str_replace('{COMMENTAIRES}', $commentSection, $template);
+
+            if ($isLivre) {
+                // Trouver le chapitre précédent et suivant
+                $currentChap = isset($article['chapitreNB']) ? (int)$article['chapitreNB'] : 1;
+                $currentLivre = $article['titre'] ?? [];
+                $template = str_replace('{NB_CHAPITRE}', $currentChap, $template);
+                $prevUrl = '';
+                $nextUrl = '';
+                
+                if (!empty($currentLivre)) {
+                    $livreDir = __DIR__ . '/page/livre/';
+                    if (is_dir($livreDir)) {
+                        $files = glob($livreDir . '*.json');
+                        foreach ($files as $f) {
+                            $fContent = file_get_contents($f);
+                            $fData = json_decode($fContent, true);
+                            if ($fData && isset($fData['titre']) && $fData['titre'] === $currentLivre) {
+                                $fChap = isset($fData['chapitreNB']) ? (int)$fData['chapitreNB'] : 1;
+                                $fSlug = basename($f, '.json');
+                                if ($fChap === $currentChap - 1) {
+                                    $prevUrl = '/livre/' . $fSlug;
+                                }
+                                if ($fChap === $currentChap + 1) {
+                                    $nextUrl = '/livre/' . $fSlug;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                $btnPrev = $prevUrl ? '<a href="' . $prevUrl . '" class="chapter-btn">← Chapitre précédent</a>' : '<div></div>';
+                $btnNext = $nextUrl ? '<a href="' . $nextUrl . '" class="chapter-btn">Chapitre suivant →</a>' : '<div></div>';
+                
+                $template = str_replace('{BOUTON_PRECEDENT}', $btnPrev, $template);
+                $template = str_replace('{BOUTON_SUIVANT}', $btnNext, $template);
+            }
+
             echo $template;
         } else {
             die("Erreur : $templatePath introuvable.");

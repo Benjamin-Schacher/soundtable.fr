@@ -23,6 +23,25 @@ if (is_dir($articleDir)) {
         }
     }
 }
+
+// Lister les livres
+$livreDir = __DIR__ . '/../livre/';
+$livres = [];
+if (is_dir($livreDir)) {
+    $files = glob($livreDir . '*.json');
+    foreach ($files as $file) {
+        $content = json_decode(file_get_contents($file), true);
+        if ($content) {
+            $livres[] = [
+                'filename' => basename($file),
+                'title' => $content['titre'] ?? 'Sans titre',
+                'date' => $content['date'] ?? 'Date inconnue',
+                'chapitreNB' => $content['chapitreNB'] ?? 0,
+                'status' => $content['status'] ?? 'published'
+            ];
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -79,7 +98,8 @@ if (is_dir($articleDir)) {
         <h1>Tableau de bord</h1>
         <div>
             <a href="/admin/create" class="btn">Nouvel Article</a>
-            <a href="/api/admin/logout" class="btn btn-danger">Déconnexion</a>
+            <a href="/admin/create-livre" class="btn" style="background-color: #28a745; margin-left:10px;">Nouveau Livre</a>
+            <a href="/api/admin/logout" class="btn btn-danger" style="margin-left:10px;">Déconnexion</a>
         </div>
     </div>
 
@@ -210,6 +230,33 @@ if (is_dir($articleDir)) {
                     <div style="display: flex; gap: 10px;">
                         <a href="/admin/edit/<?php echo str_replace('.json', '', $article['filename']); ?>" class="btn" style="background-color: #ffc107; color: #000;">Modifier</a>
                         <a href="/article/<?php echo str_replace('.json', '', $article['filename']); ?>" target="_blank" class="btn" style="background-color: #444;">Voir</a>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
+
+    <div class="article-list" style="margin-top: 2rem;">
+        <h2>Livres / Chapitres existants</h2>
+        <?php if (empty($livres)): ?>
+            <p>Aucun livre trouvé.</p>
+        <?php else: ?>
+            <?php foreach ($livres as $livre): ?>
+                <div class="article-item">
+                    <div>
+                        <div class="article-title">
+                            <?php echo htmlspecialchars($livre['title']); ?> (Chapitre <?php echo $livre['chapitreNB']; ?>)
+                            <?php if ($livre['status'] === 'draft'): ?>
+                                <span style="background-color: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-left: 10px;">BROUILLON</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="article-date">
+                            <?php echo htmlspecialchars($livre['date']); ?>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="/admin/edit-livre/<?php echo str_replace('.json', '', $livre['filename']); ?>" class="btn" style="background-color: #ffc107; color: #000;">Modifier</a>
+                        <a href="/livre/<?php echo str_replace('.json', '', $livre['filename']); ?>" target="_blank" class="btn" style="background-color: #444;">Voir</a>
                     </div>
                 </div>
             <?php endforeach; ?>

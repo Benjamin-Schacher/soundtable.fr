@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{TITRE_ARTICLE}</title>
+    <meta name="description" content="{META_DESCRIPTION}">
+    <link rel="icon" type="image/webp" href="/asset/favicon2.webp">
+    <meta name="msapplication-TileImage" content="/asset/favicon2.webp">
+    <link rel="apple-touch-icon" href="/asset/favicon2.webp">
+    <meta name="keywords" content="jeu de rôle, médiéval-fantastique, Taxandria, scénario JDR, aventure, soundboard">
+    <meta name="author" content="Soundti">
+    <meta name="robots" content="index, follow">
+    <!-- Open Graph -->
+    <meta property="og:title" content="{TITRE_ARTICLE}">
+    <meta property="og:description" content="{META_DESCRIPTION}">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://soundtable.fr{TAXANDRIA_URL}">
+    <meta property="og:image" content="https://soundtable.fr/asset/taxandria-og.jpg">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{TITRE_ARTICLE}">
+    <meta name="twitter:description" content="{META_DESCRIPTION}">
+    <meta name="twitter:image" content="https://soundtable.fr/asset/taxandria-og.jpg">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f4e8d1; /* Papier vieilli */
+            font-family: 'Georgia', serif;
+            color: #2c2c2c;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #8b6f47; /* Cuir */
+            color: #fffdf5;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Cinzel', serif;
+            border-bottom: 2px solid #6b4f2f;
+        }
+        .navbar a {
+            color: #fffdf5;
+            text-decoration: none;
+            padding: 10px 15px;
+            transition: background 0.3s;
+        }
+        .navbar a:hover {
+            background: #6b4f2f; /* Cuir plus foncé */
+            border-radius: 3px;
+        }
+        .navbar-brand {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .navbar-menu {
+            display: flex;
+            gap: 10px;
+        }
+        .navbar-toggle {
+            display: none;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        /* Book container */
+        .book-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 80px auto 20px; /* Espace pour navbar */
+            background: #fffdf5;
+            border: 2px solid #8b6f47;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            position: relative;
+            padding: 40px;
+            background-image: linear-gradient(
+                to right,
+                rgba(0,0,0,0.05) 0%,
+                rgba(0,0,0,0) 5%,
+                rgba(0,0,0,0) 95%,
+                rgba(0,0,0,0.05) 100%
+            );
+        }
+        .book-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: repeating-linear-gradient(
+                to bottom,
+                #8b6f47 0,
+                #8b6f47 4px,
+                transparent 4px,
+                transparent 8px
+            );
+            opacity: 0.1;
+        }
+        /* Breadcrumb */
+        .breadcrumb {
+            font-size: 0.9em;
+            margin-bottom: 1em;
+            color: #6b5b5b;
+        }
+        .breadcrumb a {
+            color: #8b6f47;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255,253,245,0.8);
+            border-radius: 5px;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 2.5em;
+            color: #3c2f2f;
+            text-align: center;
+            margin-bottom: 0.5em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-family: 'Cinzel', serif;
+            font-size: 1.8em;
+            color: #4a3c3c;
+            margin-top: 1.5em;
+            
+            text-align: center;
+        }
+        h3 {
+            font-size: 1.4em;
+            color: #5a4c4c;
+            margin-top: 1em;
+        }
+        p {
+            margin: 1em 0;
+            font-size: 1.1em;
+        }
+        strong {
+            font-weight: bold;
+            color: #3c2f2f;
+        }
+        em {
+            font-style: italic;
+        }
+        ul {
+            margin: 1em 0;
+            padding-left: 2em;
+            list-style-type: disc;
+        }
+        li {
+            margin-bottom: 0.5em;
+        }
+        .publication-date {
+            text-align: center;
+            font-style: italic;
+            color: #6b5b5b;
+            margin-bottom: 2em;
+        }
+        /* Style pour les commentaires */
+        .comments-section {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: rgba(255,253,245,0.9);
+            border: 1px solid #8b6f47;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .comment {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-left: 2px solid #8b6f47;
+            background: #fffdf5;
+        }
+        .comment p {
+            margin: 5px 0;
+        }
+        .toggle-replies {
+            font-weight: bold;
+            color: #8b6f47;
+        }
+        .replies {
+            margin-top: 10px;
+        }
+        .comment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .vote-btn {
+            background: #a67c00; /* Doré */
+            color: #2c2c2c; /* Texte sombre pour contraste */
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            transition: background 0.3s, transform 0.1s;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+        }
+        .vote-btn:hover {
+            background: #b8972e; /* Doré plus foncé au survol */
+            transform: scale(1.05);
+        }
+        .vote-btn.active {
+            background: #d4af37; /* Doré encore plus foncé pour indiquer le vote actif */
+            transform: scale(1.05);
+            box-shadow: inset 1px 1px 3px rgba(0,0,0,0.3);
+        }
+        .vote-btn:disabled {
+            background: #a9a9a9;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .reply-btn {
+            background: #8b6f47;
+            color: #fffdf5;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+        }
+        .reply-btn:hover {
+            background: #6b4f2f;
+        }
+        .comment-form, .reply-form {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fffdf5;
+            border: 1px solid #8b6f47;
+            border-radius: 5px;
+        }
+        .comment-form h3, .reply-form h3 {
+            font-family: 'Cinzel', serif;
+            color: #4a3c3c;
+            margin-bottom: 10px;
+        }
+        .comment-form input, .comment-form textarea,
+        .reply-form input, .reply-form textarea {
+            width: 97.5%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #8b6f47;
+            border-radius: 3px;
+            font-family: 'Georgia', serif;
+            background: #f4e8d1;
+            color: #2c2c2c;
+        }
+
+        .comment-form button, .reply-form button {
+            background: #8b6f47;
+            color: #fffdf5;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+        }
+        .comment-form button:hover, .reply-form button:hover {
+            background: #6b4f2f;
+        }
+
+        /* Centrer les images dans .content (pour les articles) */
+        .illustration-image {
+            display: block; /* Permet le centrage avec margin auto */
+            margin: 10px auto; /* Centre horizontalement avec un espacement vertical */
+            max-width: 100%; /* Assure que l'image ne dépasse pas son conteneur */
+            height: auto; /* Maintient les proportions */
+            max-height: 600px;
+        }
+
+        .follow-section {
+            padding: 20px;
+            border: 2px solid #8b6f47;
+            background: #f4e8d1;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            border-radius: 5px;
+            justify-content: center;
+            margin: 40px auto;
+            width: 90%; /* Ajout pour uniformiser la largeur */
+            max-width: 800px; /* Ajout pour limiter la largeur */
+        }
+
+        .profile-picture {
+            width: 150px;
+            height: 150px;
+            border-radius: 30000px;
+            border: 2px solid #8b6f47;
+            object-fit: cover;
+            flex-shrink: 0; 
+        }
+
+        /* Newsletter section */
+        .newsletter-section {
+            width: 90%;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: rgba(255,253,245,0.9);
+            border: 1px solid #8b6f47;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .newsletter-section h3 {
+            font-family: 'Cinzel', serif;
+            color: #4a3c3c;
+            margin-bottom: 10px;
+        }
+        .newsletter-section p {
+            font-size: 1em;
+            color: #6b5b5b;
+        }
+
+
+        .newsletter-form {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+        .newsletter-form input {
+            width: 97.5%;
+            padding: 8px;
+            border: 1px solid #8b6f47;
+            border-radius: 3px;
+            font-family: 'Georgia', serif;
+            background: #f4e8d1;
+            color: #2c2c2c;
+        }
+        .newsletter-form button {
+            background: #8b6f47;
+            color: #fffdf5;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            transition: background 0.3s;
+        }
+        .newsletter-form button:hover {
+            background: #6b4f2f;
+        }
+        #newsletter-message.success {
+            color: #4a3c3c;
+            font-weight: bold;
+        }
+        #newsletter-message.error {
+            color: #a94442;
+            font-weight: bold;
+        }
+
+        /* Chapter Navigation */
+        .chapter-nav-container {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 800px;
+            margin: 30px auto 0;
+            padding: 0;
+        }
+        .chapter-btn {
+            background: #8b6f47;
+            color: #fffdf5;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-family: 'Cinzel', serif;
+            font-weight: bold;
+            transition: background 0.3s, transform 0.1s;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .chapter-btn:hover {
+            background: #6b4f2f;
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+
+            .follow-section {
+                flex-direction: column;
+            }
+
+            .navbar-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 50px;
+                left: 0;
+                right: 0;
+                background: #8b6f47;
+                padding: 10px;
+            }
+            .navbar-menu.active {
+                display: flex;
+            }
+            .navbar-toggle {
+                display: block;
+            }
+            .book-container {
+                padding: 20px;
+                margin: 60px 10px 10px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            .content {
+                padding: 15px;
+            }
+            .comments-section {
+                padding: 15px;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/">Soundtable</a>
+        </div>
+        <div class="navbar-toggle">☰</div>
+        <div class="navbar-menu">
+            <a href="/">Accueil</a>
+            <a href="/starwars">Star Wars</a>
+            <a href="/chroniques-oubliees">Chroniques Oubliées</a>
+        </div>
+    </nav>
+    <div class="book-container">
+        <div class="content">
+            <nav class="breadcrumb">
+                <a href="/">Accueil</a> > <a href="/articles">Articles</a> > {TITRE_ARTICLE}
+            </nav>
+            <h1>{TITRE_ARTICLE}</h1>
+            <h2>Chapitre n°{NB_CHAPITRE}</h2>
+            <p class="publication-date">Publié le : {DATE_PUBLICATION}</p>
+            <div>{CONTENU_ARTICLE}</div>
+        </div>
+
+        <div class="chapter-nav-container">
+            {BOUTON_PRECEDENT}
+            {BOUTON_SUIVANT}
+        </div>
+
+        <div class="follow-section">
+            <img width="150px" height="150px" class="profile-picture" src="/asset/photo-de-profile.jpg" alt="Photo de profil">
+            <div class="flex">
+                <h3>Suit moi sur <a href="https://x.com/CarbonaraZBK" style="text-decoration-line: none;">Twitter</a> !</h3>
+                <h3>Les ZBK sur <a href="https://www.youtube.com/channel/UC8eACdDS7RN17vxo5HUPX-A" style="text-decoration-line: none;">Youtube</a> .</h3>
+                <h3>Ou reste informé des prochains contenus sur la newsletter !</h3>
+                <form id="newsletter-form" class="newsletter-form">
+                    <input type="email" id="newsletter-email" name="email" placeholder="Entrez votre email" required>
+                    <button type="submit">S'inscrire</button>
+                </form>
+                <p id="newsletter-message" style="display: none;"></p>
+            </div>
+        </div>
+
+
+        {COMMENTAIRES}
+    </div>
+    <script>
+        // Toggle menu mobile
+        document.querySelector('.navbar-toggle').addEventListener('click', () => {
+            document.querySelector('.navbar-menu').classList.toggle('active');
+        });
+
+        // Gérer les upvotes/downvotes via AJAX
+        document.querySelectorAll('.vote-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const commentId = this.getAttribute('data-id');
+                const voteType = this.getAttribute('data-type');
+                const upvoteButton = this.parentElement.querySelector('.upvote-btn');
+                const downvoteButton = this.parentElement.querySelector('.downvote-btn');
+                const upvoteCount = upvoteButton.querySelector('.vote-count');
+                const downvoteCount = downvoteButton.querySelector('.vote-count');
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=vote&comment_id=${encodeURIComponent(commentId)}&vote_type=${encodeURIComponent(voteType)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        upvoteCount.textContent = data.upvotes;
+                        downvoteCount.textContent = data.downvotes;
+                        // Mettre à jour l'apparence des boutons
+                        if (data.vote_type === 'upvote') {
+                            upvoteButton.classList.add('active');
+                            downvoteButton.classList.remove('active');
+                        } else if (data.vote_type === 'downvote') {
+                            downvoteButton.classList.add('active');
+                            upvoteButton.classList.remove('active');
+                        } else {
+                            upvoteButton.classList.remove('active');
+                            downvoteButton.classList.remove('active');
+                        }
+                    } else {
+                        console.error('Erreur:', data.error);
+                        alert('Erreur lors du vote : ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erreur réseau:', error);
+                    alert('Erreur réseau lors du vote.');
+                });
+            });
+        });
+
+        // Gérer l'affichage des formulaires de réponse
+        document.querySelectorAll('.reply-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const replyForm = this.parentElement.nextElementSibling;
+                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+
+        // Gérer l'affichage/masquage des réponses
+        document.querySelectorAll('.toggle-replies').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                const replies = this.parentElement.parentElement.querySelector('.replies');
+                if (replies.style.display === 'none' || replies.style.display === '') {
+                    replies.style.display = 'block';
+                    this.textContent = '[−] Cacher les réponses';
+                } else {
+                    replies.style.display = 'none';
+                    this.textContent = '[+] Voire les réponses';
+                }
+            });
+        });
+
+        // Gérer la soumission du formulaire de newsletter
+        $('#newsletter-form').on('submit', function (e) {
+            e.preventDefault(); // Empêcher le rechargement de la page
+
+            const email = $('#newsletter-email').val().trim();
+            const messageElement = $('#newsletter-message');
+
+            // Validation simple côté client
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                messageElement
+                    .text('Veuillez entrer une adresse email valide.')
+                    .addClass('error')
+                    .removeClass('success')
+                    .show();
+                return;
+            }
+
+            // Envoi de la requête AJAX
+            $.ajax({
+                url: 'https://soundtable.fr/api/newsletter.php', // Remplacez par l'URL de votre API
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'subscribe',
+                    email: email
+                }),
+                success: function (response) {
+                    if (response.success) {
+                        messageElement
+                            .text('Inscription réussie ! Merci de vous être abonné(e).')
+                            .addClass('success')
+                            .removeClass('error')
+                            .show();
+                        $('#newsletter-form')[0].reset(); // Réinitialiser le formulaire
+                    } else {
+                        messageElement
+                            .text(response.error || 'Une erreur est survenue. Veuillez réessayer.')
+                            .addClass('error')
+                            .removeClass('success')
+                            .show();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    messageElement
+                        .text('Erreur réseau. Veuillez réessayer plus tard.')
+                        .addClass('error')
+                        .removeClass('success')
+                        .show();
+                    console.error('AJAX error:', status, error);
+                }
+            });
+        });
+
+        $(document).ready(function () {
+            // Function to track a page view
+            function trackPageView(pageName) {
+                $.ajax({
+                    url: 'https://soundtable.fr/api/armies.php', // Replace with your API URL
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        action: 'track-page-view',
+                        pageName: pageName
+                    }),
+                    success: function(response) {
+                        console.log('Server response:', response);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', status, error);
+                    }
+                });
+            }
+
+            // Get the current URL path
+            var currentPage = window.location.pathname || 'unknown';
+            // Clean the path (remove leading "/" and .html/.php extension if present)
+            currentPage = currentPage.replace(/^\/|(\.html|\.php)$/g, '') || 'index'; // Use "index" if empty
+            
+            // Track the current page on load
+            trackPageView(currentPage);
+        });
+    </script>
+</body>
+</html>

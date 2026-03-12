@@ -264,6 +264,7 @@
             object-fit: cover;
             border-top-left-radius: 13px;
             border-top-right-radius: 13px;
+            object-position: top;
         }
 
         .card-title {
@@ -281,6 +282,16 @@
             font-size: 1em;
             color: #d4c7b4;
             padding: 0 10px;
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-chapter {
+            font-size: 1em;
+            color: #d4c7b4;
+            margin: 0px;
+            margin-bottom: 10px;
             flex-grow: 1;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -505,7 +516,7 @@
             font-weight: bold;
         }
 
-        #search-name {
+        #search-name-article, #search-name-livre {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #755139;
@@ -514,7 +525,7 @@
             color: #f5f5dc;
         }
         
-        #search-name::placeholder {
+        #search-name-article::placeholder, #search-name-livre::placeholder {
             color: #d4c7b4;
         }
     </style>
@@ -675,6 +686,169 @@
                 </div>
             </section>
 
+            <!-- Section Livre -->
+            <section id="livres" class="articles-section livre-section">
+                <h2 class="section-title">Chapitres à lire</h2>
+                <div class="scroll-container">
+                <?php   
+                $livreDir = __DIR__ . '/../livre/'; 
+                $defaultLivreImage = '/asset/default-article.png';
+                $livresData = [];
+                $allCategoriesLivres = [];
+
+                if (is_dir($livreDir)) {
+                    $files = glob($livreDir . '*.json');
+                    echo "<!-- DEBUG: Livre Directory: " . htmlspecialchars($livreDir) . " -->";
+                    echo "<!-- DEBUG: Files found: " . count($files) . " -->";
+                    
+                    foreach ($files as $file) {
+                        $rawContent = file_get_contents($file);
+                        $content = json_decode($rawContent, true);
+                        
+                        if ($content === null) {
+                            echo "<!-- DEBUG: JSON Decode Error for " . basename($file) . ": " . json_last_error_msg() . " -->";
+                            continue;
+                        }
+
+                        if (isset($content['titre'])) {
+                            // SKIP DRAFTS
+                            if (isset($content['status']) && $content['status'] === 'draft') {
+                                continue;
+                            }
+
+                            $slug = basename($file, '.json');
+                            $description = isset($content['description']) ? $content['description'] : '';
+                            if (empty($description) && isset($content['contenu'])) {
+                                $description = substr(strip_tags(str_replace(['#', '**', '*'], '', $content['contenu'])), 0, 80) . '...';
+                            }
+                            
+                            $categories = isset($content['categorie']) && is_array($content['categorie']) ? $content['categorie'] : ['Non classé'];
+                            
+                            // Collect categories
+                            foreach ($categories as $cat) {
+                                $cat = trim($cat);
+                                if (!in_array($cat, $allCategoriesLivres)) {
+                                    $allCategoriesLivres[] = $cat;
+                                }
+                            }
+
+                            // Force UTF-8 encoding for all strings to ensure json_encode works
+                            $livresData[] = [
+                                'title' => mb_convert_encoding($content['titre'], 'UTF-8', 'auto'),
+                                'url' => '/livre/' . $slug,
+                                'chapitreNB' => $content['chapitreNB'] ?? 0,
+                                'image' => $content['image'] ?? $defaultLivreImage,
+                                'description' => mb_convert_encoding($description, 'UTF-8', 'auto'),
+                                'date' => $content['date'] ?? '0000-00-00',
+                                'categories' => array_map(function($c) { return mb_convert_encoding($c, 'UTF-8', 'auto'); }, $categories)
+                            ];
+                        } else {
+                             echo "<!-- DEBUG: Missing 'titre' in " . basename($file) . " -->";
+                        }
+                    }
+                } else {
+                    echo "<!-- DEBUG: Directory not found: " . htmlspecialchars($livreDir) . " -->";
+                }
+                
+                // Trier par date décroissante (plus récent en premier)
+                usort($livresData, function($a, $b) {
+                    return strtotime($b['date']) - strtotime($a['date']);
+                });
+                sort($allCategoriesLivres); // Sort categories alphabetically
+                ?>
+
+                <div class="filter-container">
+                    <input type="text" id="search-name-livre" placeholder="Rechercher par nom...">
+                    <div class="category-filters" id="category-filters-livre">
+                        <?php foreach ($allCategoriesLivres as $category): ?>
+                            <label>
+                                <input type="checkbox" class="category-checkbox-livre category-checkbox" value="<?php echo htmlspecialchars($category); ?>">
+                                <span class="category-label"><?php echo htmlspecialchars($category); ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div class="scroll-container" id="livres-container">
+                    <!-- Les articles seront injectés ici par JS -->
+                </div>
+
+                <script>
+                    const livres = <?php 
+                        $json = json_encode($livresData);
+                        if ($json === false) {
+                            echo '[]';
+                            echo '; console.error("JSON Encode Error: ' . json_last_error_msg() . '");';
+                        } else {
+                            echo $json;
+                        }
+                    ?>;
+                    const containerLivre = document.getElementById('livres-container');
+                    const searchNameInputLivre = document.getElementById('search-name-livre');
+                    const categoryCheckboxesLivre = document.querySelectorAll('.category-checkbox-livre');
+
+                    function renderLivres(filteredLivres) {
+                        containerLivre.innerHTML = '';
+                        // Limiter à 10 articles si aucune recherche n'est active
+                        const isFiltering = searchNameInputLivre.value.trim() !== '' || Array.from(categoryCheckboxesLivre).some(cb => cb.checked);
+                        const displayList = isFiltering ? filteredLivres : filteredLivres.slice(0, 10);
+
+                        if (displayList.length === 0) {
+                            containerLivre.innerHTML = '<p style="text-align:center; width:100%;">Aucun livre trouvé.</p>';
+                            return;
+                        }
+
+                        displayList.forEach(livre => {
+                            const card = document.createElement('div');
+                            card.className = 'livre-card article-card';
+                            
+                            const categoriesStr = livre.categories.join(', ');
+
+                            card.innerHTML = `
+                                <img src="${livre.image}" alt="${livre.title}">
+                                <h3 class="card-title">${livre.title}</h3>
+                                <p class="card-chapter">Chapitres n° ${livre.chapitreNB}</p>
+                                <h4 class="card-categorie">${categoriesStr}</h4>
+                                <p class="card-description">${livre.description}</p>
+                                <a href="${livre.url}">Lire</a>
+                            `;
+                            containerLivre.appendChild(card);
+                        });
+                    }
+
+                    function filterLivres() {
+                        const nameTerm = searchNameInputLivre.value.toLowerCase();
+                        
+                        // Get selected categories
+                        const selectedCategories = Array.from(categoryCheckboxesLivre)
+                            .filter(cb => cb.checked)
+                            .map(cb => cb.value.toLowerCase());
+
+                        const filtered = livres.filter(livre => {
+                            const matchName = livre.title.toLowerCase().includes(nameTerm);
+                            
+                            // Category match: 
+                            // If no category selected, return true (ignore category filter)
+                            // If categories selected, article must have AT LEAST ONE of the selected categories
+                            let matchCategory = true;
+                            if (selectedCategories.length > 0) {
+                                matchCategory = livre.categories.some(cat => selectedCategories.includes(cat.toLowerCase()));
+                            }
+
+                            return matchName && matchCategory;
+                        });
+
+                        renderLivres(filtered);
+                    }
+
+                    searchNameInputLivre.addEventListener('input', filterLivres);
+                    categoryCheckboxesLivre.forEach(cb => cb.addEventListener('change', filterLivres));
+
+                    // Initial render
+                    renderLivres(livres);
+                </script>
+            </section>
+
             <!-- Section Articles -->
             <section id="articles" class="articles-section">
                 <h2 class="section-title">Articles à lire</h2>
@@ -746,11 +920,11 @@
                 ?>
 
                 <div class="filter-container">
-                    <input type="text" id="search-name" placeholder="Rechercher par nom...">
-                    <div class="category-filters" id="category-filters">
+                    <input type="text" id="search-name-article" placeholder="Rechercher par nom...">
+                    <div class="category-filters" id="category-filters-article">
                         <?php foreach ($allCategories as $category): ?>
                             <label>
-                                <input type="checkbox" class="category-checkbox" value="<?php echo htmlspecialchars($category); ?>">
+                                <input type="checkbox" class="category-checkbox-article category-checkbox" value="<?php echo htmlspecialchars($category); ?>">
                                 <span class="category-label"><?php echo htmlspecialchars($category); ?></span>
                             </label>
                         <?php endforeach; ?>
@@ -771,18 +945,18 @@
                             echo $json;
                         }
                     ?>;
-                    const container = document.getElementById('articles-container');
-                    const searchNameInput = document.getElementById('search-name');
-                    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+                    const containerArticle = document.getElementById('articles-container');
+                    const searchNameInputArticle = document.getElementById('search-name-article');
+                    const categoryCheckboxesArticle = document.querySelectorAll('.category-checkbox-article');
 
                     function renderArticles(filteredArticles) {
-                        container.innerHTML = '';
+                        containerArticle.innerHTML = '';
                         // Limiter à 10 articles si aucune recherche n'est active
-                        const isFiltering = searchNameInput.value.trim() !== '' || Array.from(categoryCheckboxes).some(cb => cb.checked);
+                        const isFiltering = searchNameInputArticle.value.trim() !== '' || Array.from(categoryCheckboxesArticle).some(cb => cb.checked);
                         const displayList = isFiltering ? filteredArticles : filteredArticles.slice(0, 10);
 
                         if (displayList.length === 0) {
-                            container.innerHTML = '<p style="text-align:center; width:100%;">Aucun article trouvé.</p>';
+                            containerArticle.innerHTML = '<p style="text-align:center; width:100%;">Aucun article trouvé.</p>';
                             return;
                         }
 
@@ -799,15 +973,15 @@
                                 <p class="card-description">${article.description}</p>
                                 <a href="${article.url}">Lire</a>
                             `;
-                            container.appendChild(card);
+                            containerArticle.appendChild(card);
                         });
                     }
 
                     function filterArticles() {
-                        const nameTerm = searchNameInput.value.toLowerCase();
+                        const nameTerm = searchNameInputArticle.value.toLowerCase();
                         
                         // Get selected categories
-                        const selectedCategories = Array.from(categoryCheckboxes)
+                        const selectedCategories = Array.from(categoryCheckboxesArticle)
                             .filter(cb => cb.checked)
                             .map(cb => cb.value.toLowerCase());
 
@@ -828,8 +1002,8 @@
                         renderArticles(filtered);
                     }
 
-                    searchNameInput.addEventListener('input', filterArticles);
-                    categoryCheckboxes.forEach(cb => cb.addEventListener('change', filterArticles));
+                    searchNameInputArticle.addEventListener('input', filterArticles);
+                    categoryCheckboxesArticle.forEach(cb => cb.addEventListener('change', filterArticles));
 
                     // Initial render
                     renderArticles(articles);
