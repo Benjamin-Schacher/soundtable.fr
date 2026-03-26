@@ -11,7 +11,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     
-    $titre = trim($input['titre'] ?? '');
+    $titreLivre = trim($input['titreLivre'] ?? '');
+    $titreChapitre = trim($input['titreChapitre'] ?? '');
     $date = $input['date'] ?? date('Y-m-d');
     $description = trim($input['description'] ?? '');
     $contenu = $input['contenu'] ?? '';
@@ -25,14 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $categories = ['Non classé'];
     }
 
-    if (empty($titre) || empty($contenu)) {
+    if (empty($titreLivre) || empty($titreChapitre) || empty($contenu)) {
         http_response_code(400);
-        echo json_encode(['error' => 'Titre et contenu requis']);
+        echo json_encode(['error' => 'Titre du livre, titre du chapitre et contenu requis']);
         exit;
     }
 
-    // Générer le slug (URL identifier)
-    $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $titre)));
+    // Générer le slug (URL identifier) à partir du titre du livre
+    $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $titreLivre)));
     // Ajouter le numéro de chapitre au slug pour éviter les conflits de nom de fichier
     $slug = $baseSlug . '-chapitre-' . $chapitreNB;
 
@@ -41,7 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Construire le JSON
     $livreData = [
-        'titre' => $titre,
+        'titre' => $titreLivre, // For backward compatibility if needed, though replaced mostly by titreLivre
+        'titreLivre' => $titreLivre,
+        'titreChapitre' => $titreChapitre,
         'date' => $date,
         'categorie' => $categories,
         'chapitreNB' => $chapitreNB,

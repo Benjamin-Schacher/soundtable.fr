@@ -78,8 +78,12 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
         <h1>Créer un nouveau livre/chapitre</h1>
         <form id="livre-form">
             <div class="form-group">
-                <label>Titre</label>
-                <input type="text" name="titre" required>
+                <label>Titre du Livre</label>
+                <input type="text" name="titreLivre" required>
+            </div>
+            <div class="form-group">
+                <label>Titre du Chapitre</label>
+                <input type="text" name="titreChapitre" required>
             </div>
             <div class="form-group">
                 <label>Date</label>

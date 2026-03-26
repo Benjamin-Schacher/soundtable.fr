@@ -100,8 +100,12 @@ if (!$livre) {
             <input type="hidden" name="is_edit" value="1">
             
             <div class="form-group">
-                <label>Titre</label>
-                <input type="text" name="titre" value="<?php echo htmlspecialchars($livre['titre']); ?>" required>
+                <label>Titre du Livre</label>
+                <input type="text" name="titreLivre" value="<?php echo htmlspecialchars($livre['titreLivre'] ?? $livre['titre'] ?? ''); ?>" required>
+            </div>
+            <div class="form-group">
+                <label>Titre du Chapitre</label>
+                <input type="text" name="titreChapitre" value="<?php echo htmlspecialchars($livre['titreChapitre'] ?? ''); ?>" required>
             </div>
             <div class="form-group">
                 <label>Date</label>

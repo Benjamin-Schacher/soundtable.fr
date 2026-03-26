@@ -268,7 +268,16 @@ if (json_last_error() === JSON_ERROR_NONE) {
         $templatePath = $isLivre ? 'page/template/livreTemplate.html' : 'page/template/articleTemplate.html';
         if (file_exists($templatePath)) {
             $template = file_get_contents($templatePath);
-            $template = str_replace('{TITRE_ARTICLE}', $article['titre'], $template);
+            if ($isLivre) {
+                $titreLivre = $article['titreLivre'] ?? $article['titre'] ?? 'Livre inconnu';
+                $titreChapitre = $article['titreChapitre'] ?? '';
+                $titreAffichage = $titreChapitre ? $titreLivre . ' - ' . $titreChapitre : $titreLivre;
+                $template = str_replace('{TITRE_ARTICLE}', htmlspecialchars($titreAffichage), $template);
+                $template = str_replace('{TITRE_LIVRE}', htmlspecialchars($titreLivre), $template);
+                $template = str_replace('{TITRE_CHAPITRE}', htmlspecialchars($titreChapitre), $template);
+            } else {
+                $template = str_replace('{TITRE_ARTICLE}', htmlspecialchars($article['titre'] ?? ''), $template);
+            }
             $template = str_replace('{DATE_PUBLICATION}', htmlspecialchars($article['date']), $template);
             $template = str_replace('{CONTENU_ARTICLE}', $articleContentHtml, $template);
             $template = str_replace('{META_DESCRIPTION}', htmlspecialchars($article['description'] ?? 'Découvrez cet article sur Soundtable !'), $template);
@@ -280,7 +289,7 @@ if (json_last_error() === JSON_ERROR_NONE) {
             if ($isLivre) {
                 // Trouver le chapitre précédent et suivant
                 $currentChap = isset($article['chapitreNB']) ? (int)$article['chapitreNB'] : 1;
-                $currentLivre = $article['titre'] ?? [];
+                $currentLivre = $article['titreLivre'] ?? $article['titre'] ?? '';
                 $template = str_replace('{NB_CHAPITRE}', $currentChap, $template);
                 $prevUrl = '';
                 $nextUrl = '';
@@ -292,7 +301,8 @@ if (json_last_error() === JSON_ERROR_NONE) {
                         foreach ($files as $f) {
                             $fContent = file_get_contents($f);
                             $fData = json_decode($fContent, true);
-                            if ($fData && isset($fData['titre']) && $fData['titre'] === $currentLivre) {
+                            $fLivre = $fData['titreLivre'] ?? $fData['titre'] ?? '';
+                            if ($fData && $fLivre === $currentLivre) {
                                 $fChap = isset($fData['chapitreNB']) ? (int)$fData['chapitreNB'] : 1;
                                 $fSlug = basename($f, '.json');
                                 if ($fChap === $currentChap - 1) {

@@ -479,6 +479,7 @@
             flex-direction: column;
             align-items: center;
             gap: 15px;
+            width: 35%;
         }
 
         .category-filters {
@@ -735,6 +736,7 @@
                             // Force UTF-8 encoding for all strings to ensure json_encode works
                             $livresData[] = [
                                 'title' => mb_convert_encoding($content['titre'], 'UTF-8', 'auto'),
+                                'titreChapitre' => mb_convert_encoding($content['titreChapitre'], 'UTF-8', 'auto'),
                                 'url' => '/livre/' . $slug,
                                 'chapitreNB' => $content['chapitreNB'] ?? 0,
                                 'image' => $content['image'] ?? $defaultLivreImage,
@@ -808,7 +810,7 @@
                                 <img src="${livre.image}" alt="${livre.title}">
                                 <h3 class="card-title">${livre.title}</h3>
                                 <p class="card-chapter">Chapitres n° ${livre.chapitreNB}</p>
-                                <h4 class="card-categorie">${categoriesStr}</h4>
+                                <h4 class="card-categorie">${livre.titreChapitre}</h4>
                                 <p class="card-description">${livre.description}</p>
                                 <a href="${livre.url}">Lire</a>
                             `;
