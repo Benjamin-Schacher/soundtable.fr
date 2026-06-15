@@ -1,0 +1,62 @@
+name: Deploy to OVH
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy via rsync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.OVH_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.OVH_PORT }} ${{ secrets.OVH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with rsync
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p ${{ secrets.OVH_PORT }}" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='.gitignore' \
+            --exclude='Dockerfile' \
+            --exclude='docker-compose.yml' \
+            --exclude='docker-compose.*.yml' \
+            --exclude='debug.php' \
+            --exclude='testlocal/' \
+            --exclude='tmpSave/' \
+            --exclude='local_router.php' \
+            --exclude='api/config.php' \
+            --exclude='page/comments/' \
+            --exclude='page/article/*.json' \
+            --exclude='page/livre/*.json' \
+            --exclude='page/warhammer/' \
+            --exclude='page/starwars/sound-and-picture/' \
+            --exclude='page/chronique/sound-and-picture/' \
+            --exclude='page/chronique/Audio_avec_leur_image/' \
+            --exclude='page/chronique/test/' \
+            --exclude='page/chronique/Page_forum/' \
+            --exclude='page/mtg-life-counter/' \
+            --exclude='public/' \
+            --exclude='asset/uploads/' \
+            --exclude='asset/asset-fichie-origine/' \
+            --exclude='asset/*.png' \
+            --exclude='asset/*.jpg' \
+            --exclude='asset/*.jpeg' \
+            --exclude='asset/*.webp' \
+            --exclude='asset/*.gif' \
+            --exclude='asset/*.svg' \
+            --exclude='asset/*.ico' \
+            --exclude='asset/*.cur' \
+            --exclude='asset/*.ani' \
+            ./ ${{ secrets.OVH_USER }}@${{ secrets.OVH_HOST }}:${{ secrets.OVH_PATH }}

@@ -180,6 +180,26 @@ if (is_dir($livreDir)) {
         $article['views'] = $views;
     }
     unset($article); // Rompre la référence
+
+    // Parcourir les livres pour les vues
+    foreach ($livres as &$livre) {
+        $livreId = str_replace('.json', '', $livre['filename']);
+        
+        $possibleKeys = [
+            $livreId,
+            '/livre/' . $livreId,
+            'livre/' . $livreId
+        ];
+        
+        $views = 0;
+        foreach ($possibleKeys as $key) {
+            if (isset($viewsByPage[$key])) {
+                $views += $viewsByPage[$key];
+            }
+        }
+        $livre['views'] = $views;
+    }
+    unset($livre);
     ?>
 
     <div class="stats-container" style="display: flex; gap: 20px; margin-bottom: 2rem; flex-wrap: wrap;">
@@ -251,7 +271,8 @@ if (is_dir($livreDir)) {
                             <?php endif; ?>
                         </div>
                         <div class="article-date">
-                            <?php echo htmlspecialchars($livre['date']); ?>
+                            <?php echo htmlspecialchars($livre['date']); ?> • 
+                            <span style="color: #28a745;"><?php echo $livre['views']; ?> vues</span>
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px;">
