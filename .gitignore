@@ -10,4 +10,13 @@
 /page/article/*
 /page/comments/*
 /public/*
-/asset/*
+/asset/asset-fichie-origine/*
+/asset/*.png
+/asset/*.jpg
+/asset/*.jpeg
+/asset/*.webp
+/asset/*.gif
+/asset/*.svg
+/asset/*.ico
+/asset/*.cur
+/asset/*.ani
