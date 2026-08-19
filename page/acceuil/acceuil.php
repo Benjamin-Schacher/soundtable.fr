@@ -152,11 +152,11 @@
 
         .scroll-container #articles-container {
             padding: 20px 0 20px 20px;
-            overflow-y: auto;
+            overflow-x: auto;
         }
         #tools-container {
             padding: 20px 0 20px 20px;
-            overflow-y: auto;
+            overflow-x: auto;
             display: flex;
             align-content: center;
             justify-content: center;
@@ -170,6 +170,7 @@
             display: flex;
             gap: 20px;
             flex-wrap: nowrap;
+            overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             width: 100%;
             margin: 0 auto;
@@ -177,7 +178,7 @@
             scroll-snap-type: x mandatory;
             box-sizing: border-box;
             padding-left: 0;
-            justify-content: flex-start
+            justify-content: flex-start;
         }
 
         /* Centrage si pas de scroll (largeur totale des cartes < largeur du conteneur) */

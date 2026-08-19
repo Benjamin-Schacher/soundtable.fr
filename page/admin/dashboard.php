@@ -97,6 +97,7 @@ if (is_dir($livreDir)) {
     <div class="header">
         <h1>Tableau de bord</h1>
         <div>
+            <a href="/admin/stats" class="btn" style="background-color: #17a2b8; margin-right:10px;">Graphiques & Stats</a>
             <a href="/admin/create" class="btn">Nouvel Article</a>
             <a href="/admin/create-livre" class="btn" style="background-color: #28a745; margin-left:10px;">Nouveau Livre</a>
             <a href="/api/admin/logout" class="btn btn-danger" style="margin-left:10px;">Déconnexion</a>
@@ -200,6 +201,25 @@ if (is_dir($livreDir)) {
         $livre['views'] = $views;
     }
     unset($livre);
+
+    // Vues des Soundboards et Outils
+    $soundboards = [
+        ['name' => 'Chroniques Oubliées (Soundboard)', 'url' => '/chroniques-oubliees', 'keys' => ['chroniques-oubliees', '/chroniques-oubliees']],
+        ['name' => 'Star Wars (Soundboard)', 'url' => '/starwars', 'keys' => ['starwars', '/starwars']],
+        ['name' => 'Warhammer Armies', 'url' => '/warhammeurArmise', 'keys' => ['warhammeurArmise', '/warhammeurArmise']],
+        ['name' => 'Compteur MTG', 'url' => '/MTG-compteur-de-point-de-vie', 'keys' => ['MTG-compteur-de-point-de-vie', '/MTG-compteur-de-point-de-vie']]
+    ];
+
+    foreach ($soundboards as &$sb) {
+        $sbViews = 0;
+        foreach ($sb['keys'] as $key) {
+            if (isset($viewsByPage[$key])) {
+                $sbViews += $viewsByPage[$key];
+            }
+        }
+        $sb['views'] = $sbViews;
+    }
+    unset($sb);
     ?>
 
     <div class="stats-container" style="display: flex; gap: 20px; margin-bottom: 2rem; flex-wrap: wrap;">
@@ -282,6 +302,23 @@ if (is_dir($livreDir)) {
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
+    </div>
+
+    <div class="article-list" style="margin-top: 2rem;">
+        <h2>Soundboards & Outils</h2>
+        <?php foreach ($soundboards as $sb): ?>
+            <div class="article-item">
+                <div>
+                    <div class="article-title"><?php echo htmlspecialchars($sb['name']); ?></div>
+                    <div class="article-date">
+                        <span style="color: #28a745;"><?php echo $sb['views']; ?> vues</span>
+                    </div>
+                </div>
+                <div>
+                    <a href="<?php echo htmlspecialchars($sb['url']); ?>" target="_blank" class="btn" style="background-color: #444;">Voir</a>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </body>
 </html>

@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     popup.style.cssText = `
         display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background: url('/asset/parchment-image.webp') no-repeat center; background-size: cover;
-        padding: 30px; z-index: 1000; text-align: center; color: #2c1e1e; height: 850px;
+        padding: 30px; z-index: 100000; text-align: center; color: #2c1e1e; height: 850px;
         font-family: 'MedievalSharp', cursive; width: 610px;
         align-content: center;
     `;
@@ -415,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.createElement('div');
     overlay.style.cssText = `
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5); z-index: 999;
+        background: rgba(0,0,0,0.5); z-index: 99999;
     `;
     document.body.appendChild(overlay);
 

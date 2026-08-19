@@ -23,12 +23,14 @@ function route($uri) {
 
         '/admin/login' => 'page/admin/login.php',
         '/admin/dashboard' => 'page/admin/dashboard.php',
+        '/admin/stats' => 'page/admin/stats.php',
         '/admin/create' => 'page/admin/create_article.php',
         '/admin/edit/([a-zA-Z0-9-]+)' => 'page/admin/edit_article.php',
         '/admin/create-livre' => 'page/admin/create_livre.php',
         '/admin/edit-livre/([a-zA-Z0-9-]+)' => 'page/admin/edit_livre.php',
         
         '/api/admin/login' => 'api/admin/login.php',
+        '/api/admin/get_stats.php' => 'api/admin/get_stats.php',
         '/api/admin/save-article' => 'api/admin/save_article.php',
         '/api/admin/save-livre' => 'api/admin/save_livre.php',
         '/api/admin/logout' => 'api/admin/logout.php',
