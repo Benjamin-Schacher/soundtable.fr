@@ -20,36 +20,102 @@ if (!file_exists($jsonFileAbsolute)) {
 $articleId = basename($jsonFile, '.json'); // Ex. "taxandria"
 $livreChapitre = isset($_GET['chapitre']) ? $_GET['chapitre'] : null;
 
-// Définir le chemin des commentaires
-$commentDir = __DIR__ . '/page/comments/';
-$commentFile = $commentDir . $articleId . '_comments.json';
-
-// Charger les commentaires (s'ils existent)
-$comments = [];
-if (file_exists($commentFile)) {
-    $commentContent = file_get_contents($commentFile);
-    $comments = json_decode($commentContent, true) ?: [];
+// Fonctions de gestion de l'IP, salt et anonymisation
+if (!function_exists('getClientIp')) {
+    function getClientIp() {
+        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            $ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $ip = trim($ipList[0]);
+        } else {
+            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        }
+        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+    }
 }
 
-// Gérer les requêtes de vote via AJAX
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'vote') {
-    $commentId = isset($_POST['comment_id']) ? $_POST['comment_id'] : null;
-    $voteType = isset($_POST['vote_type']) ? $_POST['vote_type'] : null;
-    $userIp = $_SERVER['REMOTE_ADDR'];
+if (!function_exists('getIpSalt')) {
+    function getIpSalt() {
+        static $salt = null;
+        if ($salt !== null) {
+            return $salt;
+        }
 
-    if (!$commentId || !in_array($voteType, ['upvote', 'downvote'])) {
-        http_response_code(400);
-        echo json_encode(['error' => 'Requête invalide']);
-        exit;
+        $envPath = __DIR__ . '/.env';
+        if (file_exists($envPath)) {
+            $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line) || strpos($line, '#') === 0) continue;
+                if (strpos($line, '=') !== false) {
+                    list($name, $value) = explode('=', $line, 2);
+                    if (trim($name) === 'IP_SALT') {
+                        $salt = trim($value);
+                        return $salt;
+                    }
+                }
+            }
+        }
+
+        $salt = 'ST_Default_SecureSalt_k8e93h!d9z&w#2025';
+        return $salt;
     }
+}
 
-    function updateVotes(&$comments, $commentId, $voteType, $userIp) {
+if (!function_exists('hashUserIp')) {
+    function hashUserIp($ip = null) {
+        if ($ip === null) {
+            $ip = getClientIp();
+        }
+        $salt = getIpSalt();
+        return hash('sha256', $ip . '_' . $salt);
+    }
+}
+
+if (!function_exists('anonymizeExistingIps')) {
+    function anonymizeExistingIps(&$comments) {
+        $modified = false;
+        foreach ($comments as &$comment) {
+            // Anonymiser les votes
+            if (isset($comment['voters']) && is_array($comment['voters'])) {
+                $newVoters = [];
+                foreach ($comment['voters'] as $voterKey => $vote) {
+                    if (filter_var($voterKey, FILTER_VALIDATE_IP)) {
+                        $newVoters[hashUserIp($voterKey)] = $vote;
+                        $modified = true;
+                    } else {
+                        $newVoters[$voterKey] = $vote;
+                    }
+                }
+                $comment['voters'] = $newVoters;
+            }
+
+            // Anonymiser le champ 'ip' s'il existait en clair
+            if (isset($comment['ip']) && filter_var($comment['ip'], FILTER_VALIDATE_IP)) {
+                $comment['ip'] = hashUserIp($comment['ip']);
+                $modified = true;
+            }
+
+            // Récursion sur les réponses
+            if (!empty($comment['replies'])) {
+                if (anonymizeExistingIps($comment['replies'])) {
+                    $modified = true;
+                }
+            }
+        }
+        return $modified;
+    }
+}
+
+if (!function_exists('updateVotes')) {
+    function updateVotes(&$comments, $commentId, $voteType, $userHashedIp) {
         foreach ($comments as &$comment) {
             if ($comment['id'] === $commentId) {
                 if (!isset($comment['voters'])) {
                     $comment['voters'] = [];
                 }
-                $previousVote = isset($comment['voters'][$userIp]) ? $comment['voters'][$userIp] : null;
+                $previousVote = isset($comment['voters'][$userHashedIp]) ? $comment['voters'][$userHashedIp] : null;
                 
                 // Si l'utilisateur a déjà voté, ajuster les compteurs
                 if ($previousVote) {
@@ -62,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 
                 // Si le nouveau vote est différent, appliquer le vote
                 if (!$previousVote || $previousVote !== $voteType) {
-                    $comment['voters'][$userIp] = $voteType;
+                    $comment['voters'][$userHashedIp] = $voteType;
                     if ($voteType === 'upvote') {
                         $comment['upvotes']++;
                     } else {
@@ -70,17 +136,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     }
                 } else {
                     // Si l'utilisateur clique sur le même type de vote, on annule
-                    unset($comment['voters'][$userIp]);
+                    unset($comment['voters'][$userHashedIp]);
                 }
                 
                 return [
                     'success' => true,
                     'comment' => $comment,
-                    'vote_type' => isset($comment['voters'][$userIp]) ? $voteType : null
+                    'vote_type' => isset($comment['voters'][$userHashedIp]) ? $voteType : null
                 ];
             }
             if (!empty($comment['replies'])) {
-                $result = updateVotes($comment['replies'], $commentId, $voteType, $userIp);
+                $result = updateVotes($comment['replies'], $commentId, $voteType, $userHashedIp);
                 if (isset($result['success'])) {
                     return $result;
                 }
@@ -88,8 +154,107 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
         return ['error' => 'Commentaire non trouvé'];
     }
+}
 
-    $result = updateVotes($comments, $commentId, $voteType, $userIp);
+if (!function_exists('addReply')) {
+    function addReply(&$comments, $parentId, $newComment) {
+        foreach ($comments as &$comment) {
+            if ($comment['id'] === $parentId) {
+                $comment['replies'][] = $newComment;
+                return true;
+            }
+            if (!empty($comment['replies'])) {
+                if (addReply($comment['replies'], $parentId, $newComment)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('renderComments')) {
+    function renderComments($comments, $userHashedIp, $depth = 0) {
+        $output = '';
+        foreach ($comments as $comment) {
+            $indent = $depth * 20; // Indentation de 20px par niveau
+            $hasReplies = !empty($comment['replies']);
+            $output .= '<div class="comment" style="margin-left: ' . $indent . 'px;">';
+            $output .= '<p>';
+            if ($hasReplies) {
+                $output .= '<span class="toggle-replies" style="cursor: pointer; margin-right: 5px;">[+]</span>';
+            }
+            $output .= '<strong style="color: #3c2f2f;">' . htmlspecialchars($comment['name']) . '</strong> ';
+            $output .= '<span style="color: #6b5b5b; font-size: 0.9em;">(' . date('d/m/Y H:i', strtotime($comment['date'])) . ')</span></p>';
+            $output .= '<p style="color: #2c2c2c;">' . nl2br(htmlspecialchars($comment['message'])) . '</p>';
+            $output .= '<div class="comment-actions">';
+            
+            // Vérifier si l'utilisateur a voté pour ce commentaire
+            $voteClassUpvote = '';
+            $voteClassDownvote = '';
+            if (isset($comment['voters']) && isset($comment['voters'][$userHashedIp])) {
+                if ($comment['voters'][$userHashedIp] === 'upvote') {
+                    $voteClassUpvote = ' active';
+                } elseif ($comment['voters'][$userHashedIp] === 'downvote') {
+                    $voteClassDownvote = ' active';
+                }
+            }
+            
+            $output .= '<button class="vote-btn upvote-btn' . $voteClassUpvote . '" data-id="' . htmlspecialchars($comment['id']) . '" data-type="upvote">👍 <span class="vote-count">' . $comment['upvotes'] . '</span></button>';
+            $output .= '<button class="vote-btn downvote-btn' . $voteClassDownvote . '" data-id="' . htmlspecialchars($comment['id']) . '" data-type="downvote">👎 <span class="vote-count">' . $comment['downvotes'] . '</span></button>';
+            $output .= '<button class="reply-btn">Répondre</button>';
+            $output .= '</div>';
+            
+            // Formulaire de réponse (caché par défaut)
+            $output .= '<div class="reply-form" style="display: none; margin-top: 10px;">';
+            $output .= '<form method="POST">';
+            $output .= '<input type="hidden" name="parent_id" value="' . htmlspecialchars($comment['id']) . '">';
+            $output .= '<input type="text" name="name" placeholder="Votre nom" required>';
+            $output .= '<textarea name="message" placeholder="Votre réponse" required></textarea>';
+            $output .= '<button type="submit">Envoyer</button>';
+            $output .= '</form>';
+            $output .= '</div>';
+            
+            // Afficher les réponses récursivement (masquées par défaut)
+            if ($hasReplies) {
+                $output .= '<div class="replies" style="display: none;">';
+                $output .= renderComments($comment['replies'], $userHashedIp, $depth + 1);
+                $output .= '</div>';
+            }
+            $output .= '</div>';
+        }
+        return $output;
+    }
+}
+
+// Définir le chemin des commentaires
+$commentDir = __DIR__ . '/page/comments/';
+$commentFile = $commentDir . $articleId . '_comments.json';
+
+// Charger les commentaires (s'ils existent)
+$comments = [];
+if (file_exists($commentFile)) {
+    $commentContent = file_get_contents($commentFile);
+    $comments = json_decode($commentContent, true) ?: [];
+    // Migration transparente si des IPs en clair existaient déjà
+    if (anonymizeExistingIps($comments)) {
+        file_put_contents($commentFile, json_encode($comments, JSON_PRETTY_PRINT));
+    }
+}
+
+// Gérer les requêtes de vote via AJAX
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'vote') {
+    $commentId = isset($_POST['comment_id']) ? $_POST['comment_id'] : null;
+    $voteType = isset($_POST['vote_type']) ? $_POST['vote_type'] : null;
+    $userHashedIp = hashUserIp();
+
+    if (!$commentId || !in_array($voteType, ['upvote', 'downvote'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Requête invalide']);
+        exit;
+    }
+
+    $result = updateVotes($comments, $commentId, $voteType, $userHashedIp);
     if ($result['success']) {
         file_put_contents($commentFile, json_encode($comments, JSON_PRETTY_PRINT));
         echo json_encode([
@@ -126,6 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'], $_POST['messa
             'id' => uniqid(),
             'name' => $name,
             'message' => $message,
+            'ip' => hashUserIp(), // IP hachée et salée pour la vie privée et la modération
             'date' => date('c'), // Format ISO 8601
             'upvotes' => 0,
             'downvotes' => 0,
@@ -135,21 +301,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['name'], $_POST['messa
         
         // Ajouter le commentaire (racine ou réponse)
         if ($parentId) {
-            // Trouver le commentaire parent et ajouter la réponse
-            function addReply(&$comments, $parentId, $newComment) {
-                foreach ($comments as &$comment) {
-                    if ($comment['id'] === $parentId) {
-                        $comment['replies'][] = $newComment;
-                        return true;
-                    }
-                    if (!empty($comment['replies'])) {
-                        if (addReply($comment['replies'], $parentId, $newComment)) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            }
             addReply($comments, $parentId, $newComment);
         } else {
             $comments[] = $newComment;
@@ -195,60 +346,7 @@ if (json_last_error() === JSON_ERROR_NONE) {
         if (empty($comments)) {
             $commentSection .= '<p style="color: #6b5b5b; text-align: center;">Aucun commentaire pour le moment. Soyez le premier !</p>';
         } else {
-            // Fonction pour afficher les commentaires récursivement
-            function renderComments($comments, $userIp, $depth = 0) {
-                $output = '';
-                foreach ($comments as $comment) {
-                    $indent = $depth * 20; // Indentation de 20px par niveau
-                    $hasReplies = !empty($comment['replies']);
-                    $output .= '<div class="comment" style="margin-left: ' . $indent . 'px;">';
-                    $output .= '<p>';
-                    if ($hasReplies) {
-                        $output .= '<span class="toggle-replies" style="cursor: pointer; margin-right: 5px;">[+]</span>';
-                    }
-                    $output .= '<strong style="color: #3c2f2f;">' . htmlspecialchars($comment['name']) . '</strong> ';
-                    $output .= '<span style="color: #6b5b5b; font-size: 0.9em;">(' . date('d/m/Y H:i', strtotime($comment['date'])) . ')</span></p>';
-                    $output .= '<p style="color: #2c2c2c;">' . nl2br(htmlspecialchars($comment['message'])) . '</p>';
-                    $output .= '<div class="comment-actions">';
-                    
-                    // Vérifier si l'utilisateur a voté pour ce commentaire
-                    $voteClassUpvote = '';
-                    $voteClassDownvote = '';
-                    if (isset($comment['voters']) && isset($comment['voters'][$userIp])) {
-                        if ($comment['voters'][$userIp] === 'upvote') {
-                            $voteClassUpvote = ' active';
-                        } elseif ($comment['voters'][$userIp] === 'downvote') {
-                            $voteClassDownvote = ' active';
-                        }
-                    }
-                    
-                    $output .= '<button class="vote-btn upvote-btn' . $voteClassUpvote . '" data-id="' . htmlspecialchars($comment['id']) . '" data-type="upvote">👍 <span class="vote-count">' . $comment['upvotes'] . '</span></button>';
-                    $output .= '<button class="vote-btn downvote-btn' . $voteClassDownvote . '" data-id="' . htmlspecialchars($comment['id']) . '" data-type="downvote">👎 <span class="vote-count">' . $comment['downvotes'] . '</span></button>';
-                    $output .= '<button class="reply-btn">Répondre</button>';
-                    $output .= '</div>';
-                    
-                    // Formulaire de réponse (caché par défaut)
-                    $output .= '<div class="reply-form" style="display: none; margin-top: 10px;">';
-                    $output .= '<form method="POST">';
-                    $output .= '<input type="hidden" name="parent_id" value="' . htmlspecialchars($comment['id']) . '">';
-                    $output .= '<input type="text" name="name" placeholder="Votre nom" required>';
-                    $output .= '<textarea name="message" placeholder="Votre réponse" required></textarea>';
-                    $output .= '<button type="submit">Envoyer</button>';
-                    $output .= '</form>';
-                    $output .= '</div>';
-                    
-                    // Afficher les réponses récursivement (masquées par défaut)
-                    if ($hasReplies) {
-                        $output .= '<div class="replies" style="display: none;">';
-                        $output .= renderComments($comment['replies'], $userIp, $depth + 1);
-                        $output .= '</div>';
-                    }
-                    $output .= '</div>';
-                }
-                return $output;
-            }
-            
-            $commentSection .= renderComments($comments, $_SERVER['REMOTE_ADDR']);
+            $commentSection .= renderComments($comments, hashUserIp());
         }
 
         // Ajouter le formulaire pour un nouveau commentaire

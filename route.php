@@ -3,7 +3,7 @@ function route($uri) {
     // Normaliser l'URI en supprimant les slashes finaux
     $uri = rtrim($uri, '/');
     if ($uri === '') {
-        $uri = '/'; // Assurer que la racine est '/'
+        $uri = '/'; 
     }
 
     $routes = [
@@ -56,7 +56,7 @@ function route($uri) {
                     return;
                 }
             }
-            // Handle other dynamic routes (like edit)
+
             if (file_exists($file)) {
                 include $file;
                 return;
@@ -64,7 +64,6 @@ function route($uri) {
         }
     }
 
-    // Si aucune route ne correspond
     include 'page/404.php';
 }
 ?>

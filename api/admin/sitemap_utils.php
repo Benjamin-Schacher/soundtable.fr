@@ -7,7 +7,6 @@ function generateSitemap() {
 
     $urls = [];
 
-    // Routes statiques (basées sur route.php et sitemap.xml existant)
     $staticRoutes = [
         '/' => ['priority' => '1', 'changefreq' => 'monthly'],
         '/en' => ['priority' => '1', 'changefreq' => 'monthly'],
@@ -22,7 +21,7 @@ function generateSitemap() {
     foreach ($staticRoutes as $path => $meta) {
         $urls[] = [
             'loc' => $baseUrl . $path,
-            'lastmod' => date('Y-m-d'), // On met à jour la date à chaque génération pour simplifier
+            'lastmod' => date('Y-m-d'), 
             'changefreq' => $meta['changefreq'],
             'priority' => $meta['priority']
         ];

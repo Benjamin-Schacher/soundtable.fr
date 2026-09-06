@@ -539,7 +539,6 @@
             });
         });
 
-        // Gérer l'affichage des formulaires de réponse
         document.querySelectorAll('.reply-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const replyForm = this.parentElement.nextElementSibling;
@@ -547,7 +546,6 @@
             });
         });
 
-        // Gérer l'affichage/masquage des réponses
         document.querySelectorAll('.toggle-replies').forEach(toggle => {
             toggle.addEventListener('click', function() {
                 const replies = this.parentElement.parentElement.querySelector('.replies');
@@ -561,14 +559,12 @@
             });
         });
 
-        // Gérer la soumission du formulaire de newsletter
         $('#newsletter-form').on('submit', function (e) {
-            e.preventDefault(); // Empêcher le rechargement de la page
+            e.preventDefault(); 
 
             const email = $('#newsletter-email').val().trim();
             const messageElement = $('#newsletter-message');
 
-            // Validation simple côté client
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 messageElement
                     .text('Veuillez entrer une adresse email valide.')
@@ -578,9 +574,8 @@
                 return;
             }
 
-            // Envoi de la requête AJAX
             $.ajax({
-                url: 'https://soundtable.fr/api/newsletter.php', // Remplacez par l'URL de votre API
+                url: 'https://soundtable.fr/api/newsletter.php', 
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -594,7 +589,7 @@
                             .addClass('success')
                             .removeClass('error')
                             .show();
-                        $('#newsletter-form')[0].reset(); // Réinitialiser le formulaire
+                        $('#newsletter-form')[0].reset(); 
                     } else {
                         messageElement
                             .text(response.error || 'Une erreur est survenue. Veuillez réessayer.')
@@ -615,10 +610,9 @@
         });
 
         $(document).ready(function () {
-            // Function to track a page view
             function trackPageView(pageName) {
                 $.ajax({
-                    url: 'https://soundtable.fr/api/armies.php', // Replace with your API URL
+                    url: 'https://soundtable.fr/api/armies.php', 
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
@@ -634,12 +628,9 @@
                 });
             }
 
-            // Get the current URL path
             var currentPage = window.location.pathname || 'unknown';
-            // Clean the path (remove leading "/" and .html/.php extension if present)
-            currentPage = currentPage.replace(/^\/|(\.html|\.php)$/g, '') || 'index'; // Use "index" if empty
+            currentPage = currentPage.replace(/^\/|(\.html|\.php)$/g, '') || 'index'; 
             
-            // Track the current page on load
             trackPageView(currentPage);
         });
     </script>

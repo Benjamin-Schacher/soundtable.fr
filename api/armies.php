@@ -20,8 +20,6 @@ switch ($method) {
     case 'POST': 
         $data = json_decode(file_get_contents('php://input'), true);
 
-        // Handle page view tracking
-        // Nouvel endpoint pour suivre les vues de page
         if (isset($data['action']) && $data['action'] === 'track-page-view') {
             if (!isset($data['pageName'])) {
                 http_response_code(400);
@@ -32,15 +30,12 @@ switch ($method) {
             $pageName = $data['pageName'];
             $currentDate = date('Y-m-d');
             $cookieName = 'visited_pages';
-            $cookieDuration = 24 * 60 * 60; // 24 heures en secondes
+            $cookieDuration = 24 * 60 * 60; // 24 heures 
 
-            // Récupérer ou initialiser le cookie
             $visitedPages = isset($_COOKIE[$cookieName]) ? json_decode($_COOKIE[$cookieName], true) : [];
 
             try {
-                // Vérifier si la page a déjà été visitée aujourd'hui par cet utilisateur
                 if (!in_array($pageName, $visitedPages)) {
-                    // Mettre à jour ou insérer le nombre de vues uniques
                     $stmt = $pdo->prepare("
                         INSERT INTO page_views (page_name, view_date, unique_views)
                         VALUES (:page_name, :view_date, 1)
@@ -51,7 +46,6 @@ switch ($method) {
                         'view_date' => $currentDate
                     ]);
 
-                    // Ajouter la page au cookie
                     $visitedPages[] = $pageName;
                     setcookie($cookieName, json_encode($visitedPages), time() + $cookieDuration, '/');
                 }
@@ -76,9 +70,7 @@ switch ($method) {
 
         if (isset($data['action'])) {
             if ($data['action'] === 'register') {
-                // ... (keep existing register code)
             } elseif ($data['action'] === 'login') {
-                // ... (keep existing login code)
             }
         }
 
@@ -98,7 +90,6 @@ switch ($method) {
         }
 
         try {
-            // Check if an army with the same username and army_name exists
             $stmt = $pdo->prepare("SELECT id FROM armies WHERE username = :username AND army_name = :army_name");
             $stmt->execute(['username' => $username, 'army_name' => $armyName]);
             $existingArmy = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -106,14 +97,11 @@ switch ($method) {
             $pdo->beginTransaction();
 
             if ($existingArmy) {
-                // Army exists, update it
                 $armyId = $existingArmy['id'];
 
-                // Delete existing units
                 $stmt = $pdo->prepare("DELETE FROM army_units WHERE army_id = :army_id");
                 $stmt->execute(['army_id' => $armyId]);
             } else {
-                // Army doesn't exist, create a new one
                 $stmt = $pdo->prepare("INSERT INTO armies (username, army_name) VALUES (:username, :army_name)");
                 $stmt->execute(['username' => $username, 'army_name' => $armyName]);
                 $armyId = $pdo->lastInsertId();

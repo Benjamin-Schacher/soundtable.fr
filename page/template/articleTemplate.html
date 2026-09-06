@@ -438,34 +438,13 @@
             <p class="publication-date">Publié le : {DATE_PUBLICATION}</p>
             <div>{CONTENU_ARTICLE}</div>
         </div>
-
-        <!--
-        <div class="follow-section">
-            <img width="150px" height="150px" class="profile-picture" src="/asset/photo-de-profile.jpg" alt="Photo de profil">
-            <div class="flex">
-                <h3>Suit moi sur <a href="https://x.com/CarbonaraZBK" style="text-decoration-line: none;">Twitter</a> !</h3>
-                <h3>Les ZBK sur <a href="https://www.youtube.com/channel/UC8eACdDS7RN17vxo5HUPX-A" style="text-decoration-line: none;">Youtube</a> .</h3>
-                <h3>Ou reste informé des prochains contenus sur la newsletter !</h3>
-                <form id="newsletter-form" class="newsletter-form">
-                    <input type="email" id="newsletter-email" name="email" placeholder="Entrez votre email" required>
-                    <button type="submit">S'inscrire</button>
-                </form>
-                <p id="newsletter-message" style="display: none;"></p>
-            </div>
-        </div>
-        -->
-        
-
-
         {COMMENTAIRES}
     </div>
     <script>
-        // Toggle menu mobile
         document.querySelector('.navbar-toggle').addEventListener('click', () => {
             document.querySelector('.navbar-menu').classList.toggle('active');
         });
 
-        // Gérer les upvotes/downvotes via AJAX
         document.querySelectorAll('.vote-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const commentId = this.getAttribute('data-id');
@@ -487,7 +466,6 @@
                     if (data.success) {
                         upvoteCount.textContent = data.upvotes;
                         downvoteCount.textContent = data.downvotes;
-                        // Mettre à jour l'apparence des boutons
                         if (data.vote_type === 'upvote') {
                             upvoteButton.classList.add('active');
                             downvoteButton.classList.remove('active');
@@ -510,7 +488,6 @@
             });
         });
 
-        // Gérer l'affichage des formulaires de réponse
         document.querySelectorAll('.reply-btn').forEach(button => {
             button.addEventListener('click', function() {
                 const replyForm = this.parentElement.nextElementSibling;
@@ -518,7 +495,6 @@
             });
         });
 
-        // Gérer l'affichage/masquage des réponses
         document.querySelectorAll('.toggle-replies').forEach(toggle => {
             toggle.addEventListener('click', function() {
                 const replies = this.parentElement.parentElement.querySelector('.replies');
@@ -532,14 +508,12 @@
             });
         });
 
-        // Gérer la soumission du formulaire de newsletter
         $('#newsletter-form').on('submit', function (e) {
-            e.preventDefault(); // Empêcher le rechargement de la page
+            e.preventDefault();
 
             const email = $('#newsletter-email').val().trim();
             const messageElement = $('#newsletter-message');
 
-            // Validation simple côté client
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 messageElement
                     .text('Veuillez entrer une adresse email valide.')
@@ -549,9 +523,8 @@
                 return;
             }
 
-            // Envoi de la requête AJAX
             $.ajax({
-                url: 'https://soundtable.fr/api/newsletter.php', // Remplacez par l'URL de votre API
+                url: 'https://soundtable.fr/api/newsletter.php', 
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
@@ -565,7 +538,7 @@
                             .addClass('success')
                             .removeClass('error')
                             .show();
-                        $('#newsletter-form')[0].reset(); // Réinitialiser le formulaire
+                        $('#newsletter-form')[0].reset(); 
                     } else {
                         messageElement
                             .text(response.error || 'Une erreur est survenue. Veuillez réessayer.')
@@ -586,10 +559,9 @@
         });
 
         $(document).ready(function () {
-            // Function to track a page view
             function trackPageView(pageName) {
                 $.ajax({
-                    url: 'https://soundtable.fr/api/armies.php', // Replace with your API URL
+                    url: 'https://soundtable.fr/api/armies.php', 
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({
@@ -605,12 +577,9 @@
                 });
             }
 
-            // Get the current URL path
             var currentPage = window.location.pathname || 'unknown';
-            // Clean the path (remove leading "/" and .html/.php extension if present)
             currentPage = currentPage.replace(/^\/|(\.html|\.php)$/g, '') || 'index'; // Use "index" if empty
             
-            // Track the current page on load
             trackPageView(currentPage);
         });
     </script>
