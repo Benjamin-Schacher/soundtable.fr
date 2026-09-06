@@ -794,7 +794,7 @@
                         containerLivre.innerHTML = '';
                         // Limiter à 10 articles si aucune recherche n'est active
                         const isFiltering = searchNameInputLivre.value.trim() !== '' || Array.from(categoryCheckboxesLivre).some(cb => cb.checked);
-                        const displayList = isFiltering ? filteredLivres : filteredLivres.slice(0, 10);
+                        const displayList = isFiltering ? filteredLivres : filteredLivres.slice(0, 20);
 
                         if (displayList.length === 0) {
                             containerLivre.innerHTML = '<p style="text-align:center; width:100%;">Aucun livre trouvé.</p>';
